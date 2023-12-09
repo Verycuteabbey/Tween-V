@@ -11,8 +11,6 @@
 --!strict
 
 --// defines
-abs = math.abs;
-asin = math.abs;
 cos = math.cos;
 pi = math.pi;
 pow = math.pow;
