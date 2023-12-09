@@ -1,7 +1,10 @@
-# Tween-V // 一个因为无聊而开发的库
+# Tween-V // 下一代 VCA's Tween
 
-因为受不了 TweenService 的复杂语法所以突发奇想，然后就诞生了这个库（对.jpg
+你的下一个 Tween, 何必是 TweenService 呢？
 
-~~什么？你怎么知道 Verycuteabbey 复出了~~
+这是一个自定义 Tween 框架, 算法来源自 Tween.js 并优化了其一部分算法
+
+什么？你说怎么开发进度那么慢的？那当然是 remake 一个石山非常艰难的，~~因为 VCA 这个时候估计在被社会拷打（大雾~~
 
 ---
+
