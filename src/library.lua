@@ -22,12 +22,7 @@ type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Exp
 type easeDirection = "In" | "Out" | "InOut";
 type result = CFrame | Color3 | Vector2 | Vector3 | UDim2;
 
-local active: table = {};
 local library: table = {};
-local suspended: table = {};
-
-library.active = active;
-library.suspended = suspended;
 
 --// functions
 function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number): number
