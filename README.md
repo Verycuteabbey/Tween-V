@@ -14,9 +14,9 @@
 
 前要提醒：
 
-Tween-V - Library // 是负责返回所提供参数的当前插值进度，支持 CFrame、Color3、number、Vector2、Vector3 类型（仍待优化）
+（欠优化）Tween-V - Library // 是负责返回所提供参数的当前插值进度，支持常用类型（详细可见 positionType 定义）
 
-Tween-V - Controller // 是负责处理 Library 所返回的插值进度，使用 Heartbeat 进行插值（仍在开发）
+（开发中）Tween-V - Controller // 是负责处理 Library 所返回的插值进度，使用 Heartbeat 进行自适应插值
 
 ### 单独使用 Library
 
@@ -31,10 +31,10 @@ library:Lerp(easeOption: table?, A: positionType, B: positionType, schedule: num
 其中 positionType 是一个定义：
 
 ```lua
-type positionType = CFrame | Color3 | number | Vector2 | Vector3 | UDim2;
+type positionType = CFrame | Color3 | ColorSequenceKeypoint | DateTime | number | NumberRange | NumberSequenceKeypoint | Ray | Rect | Region3 | UDim2 | Vector2 | Vector3;
 ```
 
-easeOption 包含以下内容（默认值），当然如果不给的话会用以下，子项也是如此：
+easeOption 包含以下内容（默认值），当然如果为空会用以下，子项也是如此：
 
 ```lua
 local easeOption: table = {
@@ -43,11 +43,15 @@ local easeOption: table = {
 };
 ```
 
+A 为起始点，B 为终点，schedule 为当前进度（0 ~ 1 表示，可转化为百分比显示）
+
+最终 Lerp 函数会返回一个相同类型的插值进度
+
 ---
 
 使用示例：
 
-获得 part 从 0, 0, 0 到 10, 10, 10 之间 50% 的插值进度，使用 Quad Out 来驱动 Vector3
+获得 part 从 0, 0, 0 到 10, 10, 10 之间 50% 的插值进度，使用 Quad Out 来驱动 Vector3 类型
 
 > ⚠ 注意：Library 不允许出现异类型之间的计算，不要想着 CFrame 与 Vector3 两个奇奇怪怪的计算！ ⚠
 
@@ -61,7 +65,7 @@ local result = library:Lerp({style = "Quad", direction = "Out"}, part.Position, 
 print(result);
 ```
 
-此时输出 result 会得到 7.5, 7.5, 7.5 的返回值（当然是 Vector3 类型，你输入什么类型就返回什么类型）
+此时输出 result 会得到 7.5, 7.5, 7.5 的返回值
 
 ---
 

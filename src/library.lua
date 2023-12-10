@@ -20,7 +20,7 @@ local sqrt = math.sqrt;
 
 type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce";
 type easeDirection = "In" | "Out" | "InOut";
-type positionType = CFrame | Color3 | number | Vector2 | Vector3 | UDim2;
+type positionType = CFrame | Color3 | ColorSequenceKeypoint | DateTime | number | NumberRange | NumberSequenceKeypoint | Ray | Rect | Region3 | UDim2 | Vector2 | Vector3;
 
 local library: table = {};
 
@@ -296,7 +296,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
 end;
 
 function __getLerp(variant: string, A: positionType, B: positionType, alpha: number): positionType
-    local function general(A: number, B: number, alpha:number): number
+    local function general(A: number, B: number): number
         return A + (B - A) * alpha;
     end;
 
@@ -307,7 +307,86 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
         local R1: number, G1: number, B1: number = A.R, A.G, A.B;
         local R2: number, G2: number, B2: number = B.R, B.G, B.B;
 
-        return Color3.new(general(R1, R2, alpha), general(G1, G2, alpha), general(B1, B2, alpha));
+        return Color3.new(general(R1, R2), general(G1, G2), general(B1, B2));
+    end;
+
+    local function colorSequenceKeypoint(): positionType
+        local A: ColorSequenceKeypoint = A;
+        local B: ColorSequenceKeypoint = B;
+
+        local T1: number, T2: number = A.Time, B.Time;
+        local R1: number, G1: number, B1: number = A.Value.R, A.Value.G, A.Value.B;
+        local R2: number, G2: number, B2: number = B.Value.R, B.Value.G, B.Value.B;
+
+        local color: Color3 = Color3.new(general(R1, R2), general(G1, G2), general(B1, B2));
+
+        return ColorSequenceKeypoint.new(general(T1, T2), color);
+    end;
+
+    local function dateTime(): positionType
+        local A: DateTime = A;
+        local B: DateTime = B;
+
+        local T1: number, T2: number = A.UnixTimestampMillis, B.UnixTimestampMillis;
+
+        return DateTime.fromUnixTimestampMillis(general(T1, T2));
+    end;
+
+    local function numberRange(): positionType
+        local A: NumberRange = A;
+        local B: NumberRange = B;
+
+        local Min1: number, Min2: number = A.Min, B.Min;
+        local Max1: number, Max2: number = A.Max, B.Max;
+
+        return NumberRange.new(general(Min1, Min2), general(Max1, Max2));
+    end;
+
+    local function numberSequenceKeypoint(): positionType
+        local A: NumberSequenceKeypoint = A;
+        local B: NumberSequenceKeypoint = B;
+
+        local E1: number, E2: number = A.Envelope, B.Envelope;
+        local T1: number, T2: number = A.Time, B.Time;
+        local V1: number, V2: number = A.Value, B.Value;
+
+        return NumberSequenceKeypoint.new(general(T1, T2), general(V1, V2), general(E1, E2));
+    end;
+
+    local function ray(): positionType
+        local A: Ray = A;
+        local B: Ray = B;
+
+        local D1: Vector3, D2: Vector3 = A.Direction, B.Direction;
+        local O1: Vector3, O2: Vector3 = A.Origin, B.Origin;
+
+        local V1: Vector3 = Vector3.new(general(D1.X, D2.X), general(D1.Y, D2.Y), general(D1.Z, D2.Z));
+        local V2: Vector3 = Vector3.new(general(O1.X, O2.X), general(O1.Y, O2.Y), general(O1.Z, O2.Z));
+
+        return Ray.new(V2, V1);
+    end;
+
+    local function rect(): positionType
+        local A: Rect = A;
+        local B: Rect = B;
+
+        local Min1: Vector2, Min2: Vector2 = A.Min, B.Min;
+        local Max1: Vector2, Max2: Vector2 = A.Max, B.Max;
+
+        local V1: Vector2 = Vector2.new(general(Min1.X, Min2.X), general(Min1.Y, Min2.Y));
+        local V2: Vector2 = Vector2.new(general(Max1.X, Max2.X), general(Max1.Y, Max2.Y));
+
+        return Rect.new(V1, V2);
+    end;
+
+    local function region3(): positionType
+        local A: Region3 = A;
+        local B: Region3 = B;
+
+        local position: Vector3 = A.CFrame.Position:Lerp(B.CFrame.Position, alpha);
+        local halfSize: Vector3 = A.Size:Lerp(B.Size, alpha) / 2;
+
+        return Region3.new(position - halfSize, position + halfSize);
     end;
 
     local function cframe(): positionType
@@ -341,13 +420,20 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
     local map: table = {
         ["CFrame"] = cframe;
         ["Color3"] = color3;
+        ["ColorSequenceKeypoint"] = colorSequenceKeypoint;
+        ["DateTime"] = dateTime;
         ["number"] = general;
+        ["NumberRange"] = numberRange;
+        ["NumberSequenceKeypoint"] = numberSequenceKeypoint;
+        ["Ray"] = ray;
+        ["Rect"] = rect;
+        ["Region3"] = region3;
         ["UDim2"] = udim2;
         ["Vector2"] = vector2;
         ["Vector3"] = vector3;
     };
 
-    return map[variant](A, B, alpha);
+    return map[variant](A, B);
 end;
 
 function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?}?, A: positionType, B: positionType, schedule: number): positionType
