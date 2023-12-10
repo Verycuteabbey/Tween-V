@@ -26,19 +26,19 @@ local library: table = {};
 
 --// functions
 function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number): number
-    local function Linear(): number
+    local function linear(): number
         return schedule;
     end;
 
-    local function QuadIn(): number
+    local function quadIn(): number
         return schedule * schedule;
     end;
 
-    local function QuadOut(): number
+    local function quadOut(): number
         return 1 - (1 - schedule) * (1 - schedule);
     end;
 
-    local function QuadInOut(): number
+    local function quadInOut(): number
         if (schedule < 0.5) then
             return 2 * schedule * schedule;
         else
@@ -46,15 +46,15 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function CubicIn(): number
+    local function cubicIn(): number
         return schedule * schedule * schedule;
     end;
 
-    local function CubicOut(): number
+    local function cubicOut(): number
         return 1 - pow(1 - schedule, 3);
     end;
 
-    local function CubicInOut(): number
+    local function cubicInOut(): number
         if (schedule < 0.5) then
             return 4 * schedule * schedule * schedule;
         else
@@ -62,15 +62,15 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function QuartIn(): number
+    local function quartIn(): number
         return schedule * schedule * schedule * schedule;
     end;
 
-    local function QuartOut(): number
+    local function quartOut(): number
         return 1 - pow(1 - schedule, 4);
     end;
 
-    local function QuartInOut(): number
+    local function quartInOut(): number
         if (schedule < 0.5) then
             return 8 * schedule * schedule * schedule * schedule;
         else
@@ -78,15 +78,15 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function QuintIn(): number
+    local function quintIn(): number
         return schedule * schedule * schedule * schedule * schedule;
     end;
 
-    local function QuintOut(): number
+    local function quintOut(): number
         return 1 - pow(1 - schedule, 5);
     end;
 
-    local function QuintInOut(): number
+    local function quintInOut(): number
         if (schedule < 0.5) then
             return 16 * schedule * schedule * schedule * schedule * schedule;
         else
@@ -94,19 +94,19 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function SineIn(): number
+    local function sineIn(): number
         return 1 - cos((schedule * pi) / 2);
     end;
 
-    local function SineOut(): number
+    local function sineOut(): number
         return sin((schedule * pi) / 2);
     end;
 
-    local function SineInOut(): number
+    local function sineInOut(): number
         return -(cos(schedule * pi) - 1) / 2;
     end;
 
-    local function ExpoIn(): number
+    local function expoIn(): number
         if (schedule == 0) then
             return 0;
         else
@@ -114,7 +114,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function ExpoOut(): number
+    local function expoOut(): number
         if (schedule == 1) then
             return 1;
         else
@@ -122,7 +122,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function ExpoInOut(): number
+    local function expoInOut(): number
         if (schedule == 0) then
             return 0;
         elseif (schedule == 1) then
@@ -136,15 +136,15 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function CircIn(): number
+    local function circIn(): number
         return 1 - sqrt(1 - pow(schedule, 2));
     end;
 
-    local function CircOut(): number
+    local function circOut(): number
         return sqrt(1 - pow(schedule - 1, 2));
     end;
 
-    local function CircInOut(): number
+    local function circInOut(): number
         if (schedule < 0.5) then
             return (1 - sqrt(1 - pow(2 * schedule, 2))) / 2;
         else
@@ -152,7 +152,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function ElasticIn(): number
+    local function elasticIn(): number
         local A: number = (2 * pi) / 3;
 
         if (schedule == 0) then
@@ -164,7 +164,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function ElasticOut(): number
+    local function elasticOut(): number
         local A: number = (2 * pi) / 3;
 
         if (schedule == 0) then
@@ -176,7 +176,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function ElasticInOut(): number
+    local function elasticInOut(): number
         local A: number = (2 * pi) / 4.5;
 
         if (schedule == 0) then
@@ -192,21 +192,21 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function BackIn(): number
+    local function backIn(): number
         local A: number = 1.70158;
         local B: number = A + 1;
 
         return B * schedule * schedule * schedule - A * schedule * schedule;
     end;
 
-    local function BackOut(): number
+    local function backOut(): number
         local A: number = 1.70158;
         local B: number = A + 1;
 
         return 1 + B * pow(schedule - 1, 3) + A * pow(schedule - 1, 2);
     end;
 
-    local function BackInOut(): number
+    local function backInOut(): number
         local A: number = 1.70158;
         local B: number = A * 1.525;
 
@@ -217,7 +217,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function BounceOut(bSchedule: number?): number
+    local function bounceOut(bSchedule: number?): number
         if (not bSchedule) then
             bSchedule = schedule;
         end;
@@ -242,52 +242,52 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function BounceIn(): number
-        return 1 - BounceOut(1 - schedule);
+    local function bounceIn(): number
+        return 1 - bounceOut(1 - schedule);
     end;
 
-    local function BounceInOut(): number
+    local function bounceInOut(): number
         if (schedule < 0.5) then
-            return (1 - BounceOut(1 - 2 * schedule)) / 2;
+            return (1 - bounceOut(1 - 2 * schedule)) / 2;
         else
-            return (1 + BounceOut(1 - 2 * schedule)) / 2;
+            return (1 + bounceOut(1 - 2 * schedule)) / 2;
         end;
     end;
 
     local map: table = {
-        ["LinearIn"] = Linear;
-        ["LinearOut"] = Linear;
-        ["LinearInOut"] = Linear;
-        ["QuadIn"] = QuadIn;
-        ["QuadOut"] = QuadOut;
-        ["QuadInOut"] = QuadInOut;
-        ["CubicIn"] = CubicIn;
-        ["CubicOut"] = CubicOut;
-        ["CubicInOut"] = CubicInOut;
-        ["QuartIn"] = QuartIn;
-        ["QuartOut"] = QuartOut;
-        ["QuartInOut"] = QuartInOut;
-        ["QuintIn"] = QuintIn;
-        ["QuintOut"] = QuintOut;
-        ["QuintInOut"] = QuintInOut;
-        ["SineIn"] = SineIn;
-        ["SineOut"] = SineOut;
-        ["SineInOut"] = SineInOut;
-        ["ExpoIn"] = ExpoIn;
-        ["ExpoOut"] = ExpoOut;
-        ["ExpoInOut"] = ExpoInOut;
-        ["CircIn"] = CircIn;
-        ["CircOut"] = CircOut;
-        ["CircInOut"] = CircInOut;
-        ["ElasticIn"] = ElasticIn;
-        ["ElasticOut"] = ElasticOut;
-        ["ElasticInOut"] = ElasticInOut;
-        ["BackIn"] = BackIn;
-        ["BackOut"] = BackOut;
-        ["BackInOut"] = BackInOut;
-        ["BounceIn"] = BounceIn;
-        ["BounceOut"] = BounceOut;
-        ["BounceInOut"] = BounceInOut;
+        ["LinearIn"] = linear;
+        ["LinearOut"] = linear;
+        ["LinearInOut"] = linear;
+        ["QuadIn"] = quadIn;
+        ["QuadOut"] = quadOut;
+        ["QuadInOut"] = quadInOut;
+        ["CubicIn"] = cubicIn;
+        ["CubicOut"] = cubicOut;
+        ["CubicInOut"] = cubicInOut;
+        ["QuartIn"] = quartIn;
+        ["QuartOut"] = quartOut;
+        ["QuartInOut"] = quartInOut;
+        ["QuintIn"] = quintIn;
+        ["QuintOut"] = quintOut;
+        ["QuintInOut"] = quintInOut;
+        ["SineIn"] = sineIn;
+        ["SineOut"] = sineOut;
+        ["SineInOut"] = sineInOut;
+        ["ExpoIn"] = expoIn;
+        ["ExpoOut"] = expoOut;
+        ["ExpoInOut"] = expoInOut;
+        ["CircIn"] = circIn;
+        ["CircOut"] = circOut;
+        ["CircInOut"] = circInOut;
+        ["ElasticIn"] = elasticIn;
+        ["ElasticOut"] = elasticOut;
+        ["ElasticInOut"] = elasticInOut;
+        ["BackIn"] = backIn;
+        ["BackOut"] = backOut;
+        ["BackInOut"] = backInOut;
+        ["BounceIn"] = bounceIn;
+        ["BounceOut"] = bounceOut;
+        ["BounceInOut"] = bounceInOut;
     };
 
     local variant: string = format("%s%s", style, direction);
@@ -295,7 +295,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
     return map[variant]();
 end;
 
-function __getLerp(var: string, A: result, B: result, C: number): result
+function __getLerp(variant: string, A: result, B: result, C: number): result
     local function general(A: number, B: number, C:number): number
         return A + (B - A) * C;
     end;
@@ -346,16 +346,30 @@ function __getLerp(var: string, A: result, B: result, C: number): result
         ["Vector3"] = vector3;
     };
 
-    return map[var]();
+    return map[variant]();
 end;
 
 function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?, duration: number?}?, startPos: result, endPos: result, schedule: number): result
     if (not easeOption) then
+        warn("Tween-V - Warning // A empty easeOption has been given, using default");
+
         easeOption = {
             style = "Linear",
             direction = "In",
             duration = 1
         };
+    elseif (not easeOption.style) then
+        warn("Tween-V - Warning // easeOption has given a empty style, using default");
+
+        easeOption.style = "Linear";
+    elseif (not easeOption.direction) then
+        warn("Tween-V - Warning // easeOption has given a empty direction, using default");
+
+        easeOption.direction = "In";
+    elseif (not easeOption.duration) then
+        warn("Tween-V - Warning // easeOption has given a empty duration, using default");
+
+        easeOption.duration = 1;
     end;
 
     local style: easeStyle, direction: easeDirection, duration: number = unpack(easeOption);
@@ -367,7 +381,7 @@ function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?,
         return __getLerp(startType, startPos, endPos, alpha);
     end;
 
-    error("Tween-V // Only same types position can send it!");
+    error("Tween-V - Error // Only same types of position can lerp!");
 end;
 
 return library;
