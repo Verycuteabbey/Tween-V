@@ -360,10 +360,10 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
         local D1: Vector3, D2: Vector3 = A.Direction, B.Direction;
         local O1: Vector3, O2: Vector3 = A.Origin, B.Origin;
 
-        local V1: Vector3 = Vector3.new(general(D1.X, D2.X), general(D1.Y, D2.Y), general(D1.Z, D2.Z));
-        local V2: Vector3 = Vector3.new(general(O1.X, O2.X), general(O1.Y, O2.Y), general(O1.Z, O2.Z));
+        local V1: Vector3 = Vector3.new(general(O1.X, O2.X), general(O1.Y, O2.Y), general(O1.Z, O2.Z));
+        local V2: Vector3 = Vector3.new(general(D1.X, D2.X), general(D1.Y, D2.Y), general(D1.Z, D2.Z));
 
-        return Ray.new(V2, V1);
+        return Ray.new(V1, V2);
     end;
 
     local function rect(): positionType
