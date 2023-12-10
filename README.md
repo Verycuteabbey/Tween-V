@@ -34,7 +34,9 @@ library:Lerp(easeOption: table?, A: positionType, B: positionType, schedule: num
 type positionType = CFrame | Color3 | ColorSequenceKeypoint | DateTime | number | NumberRange | NumberSequenceKeypoint | Ray | Rect | Region3 | UDim2 | Vector2 | Vector3;
 ```
 
-easeOption 包含以下内容（默认值），当然如果为空会用以下，子项也是如此：
+easeOption 包含以下内容，当然如果为空将会用默认值，子项也是如此：
+
+> 注：展示的示例就是默认值
 
 ```lua
 local easeOption: table = {
