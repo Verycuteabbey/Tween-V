@@ -46,10 +46,6 @@ function library:Create(easeOption: {style: easeStyle?, direction: easeDirection
 
     object.easeOption = easeOption;
 
-    function object:Start()
-        
-    end;
-
     return object;
 end;
 
