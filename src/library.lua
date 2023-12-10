@@ -20,7 +20,7 @@ local sqrt = math.sqrt;
 
 type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce";
 type easeDirection = "In" | "Out" | "InOut";
-type result = CFrame | Color3 | Vector2 | Vector3 | UDim2;
+type positionType = CFrame | Color3 | number | Vector2 | Vector3 | UDim2;
 
 local library: table = {};
 
@@ -295,68 +295,68 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
     return map[variant]();
 end;
 
-function __getLerp(variant: string, A: result, B: result, C: number): result
-    local function general(A: number, B: number, C:number): number
-        return A + (B - A) * C;
+function __getLerp(variant: string, A: positionType, B: positionType, alpha: number): positionType
+    local function general(A: number, B: number, alpha:number): number
+        return A + (B - A) * alpha;
     end;
 
-    local function color3(): result
+    local function color3(): positionType
         local A: Color3 = A;
         local B: Color3 = B;
 
         local R1: number, G1: number, B1: number = A.R, A.G, A.B;
         local R2: number, G2: number, B2: number = B.R, B.G, B.B;
 
-        return Color3.new(general(R1, R2, C), general(G1, G2, C), general(B1, B2, C));
+        return Color3.new(general(R1, R2, alpha), general(G1, G2, alpha), general(B1, B2, alpha));
     end;
 
-    local function cframe(): result
+    local function cframe(): positionType
         local A: CFrame = A;
         local B: CFrame = B;
 
-        return A:Lerp(B, C);
+        return A:Lerp(B, alpha);
     end;
 
-    local function udim2(): result
+    local function udim2(): positionType
         local A: UDim2 = A;
         local B: UDim2 = B;
 
-        return A:Lerp(B, C);
+        return A:Lerp(B, alpha);
     end;
 
-    local function vector2(): result
+    local function vector2(): positionType
         local A: Vector2 = A;
         local B: Vector2 = B;
 
-        return A:Lerp(B, C);
+        return A:Lerp(B, alpha);
     end;
 
-    local function vector3(): result
+    local function vector3(): positionType
         local A: Vector3 = A;
         local B: Vector3 = B;
 
-        return A:Lerp(B, C);
+        return A:Lerp(B, alpha);
     end;
 
     local map: table = {
         ["CFrame"] = cframe;
         ["Color3"] = color3;
+        ["number"] = general;
         ["UDim2"] = udim2;
         ["Vector2"] = vector2;
         ["Vector3"] = vector3;
     };
 
-    return map[variant]();
+    return map[variant](A, B, alpha);
 end;
 
-function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?, duration: number?}?, startPos: result, endPos: result, schedule: number): result
+function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?}?, A: positionType, B: positionType, schedule: number): positionType
     if (not easeOption) then
         warn("Tween-V - Warning // A empty easeOption has been given, using default");
 
         easeOption = {
             style = "Linear",
-            direction = "In",
-            duration = 1
+            direction = "In"
         };
     elseif (not easeOption.style) then
         warn("Tween-V - Warning // easeOption has given a empty style, using default");
@@ -366,19 +366,15 @@ function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?,
         warn("Tween-V - Warning // easeOption has given a empty direction, using default");
 
         easeOption.direction = "In";
-    elseif (not easeOption.duration) then
-        warn("Tween-V - Warning // easeOption has given a empty duration, using default");
-
-        easeOption.duration = 1;
     end;
 
-    local style: easeStyle, direction: easeDirection, duration: number = unpack(easeOption);
+    local style: easeStyle, direction: easeDirection = unpack(easeOption);
 
-    local alpha: number = __getAlpha(style, direction, schedule) / duration;
-    local startType: string, endType: string = typeof(startPos), typeof(endPos);
+    local alpha: number = __getAlpha(style, direction, schedule);
+    local typeA: string, typeB: string = typeof(A), typeof(B);
 
-    if (startType == endType) then
-        return __getLerp(startType, startPos, endPos, alpha);
+    if (typeA == typeB) then
+        return __getLerp(typeA, A, B, alpha);
     end;
 
     error("Tween-V - Error // Only same types of position can lerp!");
