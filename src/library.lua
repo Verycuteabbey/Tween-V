@@ -26,6 +26,8 @@ local library: table = {};
 
 --// functions
 function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number): number
+    local A: number, B: number;
+
     local function linear(): number
         return schedule;
     end;
@@ -153,7 +155,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
     end;
 
     local function elasticIn(): number
-        local A: number = (2 * pi) / 3;
+        A = (2 * pi) / 3;
 
         if (schedule == 0) then
             return 0;
@@ -165,7 +167,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
     end;
 
     local function elasticOut(): number
-        local A: number = (2 * pi) / 3;
+        A = (2 * pi) / 3;
 
         if (schedule == 0) then
             return 0;
@@ -177,7 +179,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
     end;
 
     local function elasticInOut(): number
-        local A: number = (2 * pi) / 4.5;
+        A = (2 * pi) / 4.5;
 
         if (schedule == 0) then
             return 0;
@@ -193,22 +195,19 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
     end;
 
     local function backIn(): number
-        local A: number = 1.70158;
-        local B: number = A + 1;
+        A, B = 1.70158, A + 1;
 
         return B * schedule * schedule * schedule - A * schedule * schedule;
     end;
 
     local function backOut(): number
-        local A: number = 1.70158;
-        local B: number = A + 1;
+        A, B = 1.70158, A + 1;
 
         return 1 + B * pow(schedule - 1, 3) + A * pow(schedule - 1, 2);
     end;
 
     local function backInOut(): number
-        local A: number = 1.70158;
-        local B: number = A * 1.525;
+        A, B = 1.70158, A * 1.525;
 
         if (schedule < 0.5) then
             return (pow(2 * schedule, 2) * ((B + 1) * 2 * schedule - B)) / 2;
@@ -217,13 +216,8 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
         end;
     end;
 
-    local function bounceOut(bSchedule: number?): number
-        if (not bSchedule) then
-            bSchedule = schedule;
-        end;
-
-        local A: number = 7.5625;
-        local B: number = 2.75;
+    local function bounceOut(bSchedule: number): number
+        A, B = 7.5625, 2.75;
 
         if (bSchedule < 1 / B) then
             return A * bSchedule * bSchedule;
@@ -296,92 +290,86 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
 end;
 
 function __getLerp(variant: string, A: positionType, B: positionType, alpha: number): positionType
-    local function general(A: number, B: number): number
-        return A + (B - A) * alpha;
-    end;
-
-    local function color3(): positionType
-        local A: Color3 = A;
-        local B: Color3 = B;
+    local function color3(): Color3
+        A, B = A :: Color3, B :: Color3;
 
         local R1: number, G1: number, B1: number = A.R, A.G, A.B;
         local R2: number, G2: number, B2: number = B.R, B.G, B.B;
 
-        return Color3.new(general(R1, R2), general(G1, G2), general(B1, B2));
+        return Color3.new(__getLerp("number", R1, R2, alpha), __getLerp("number", G1, G2, alpha), __getLerp("number", B1, B2, alpha));
     end;
 
-    local function colorSequenceKeypoint(): positionType
-        local A: ColorSequenceKeypoint = A;
-        local B: ColorSequenceKeypoint = B;
+    local function colorSequenceKeypoint(): ColorSequenceKeypoint
+        A, B = A :: ColorSequenceKeypoint, B :: ColorSequenceKeypoint;
 
         local T1: number, T2: number = A.Time, B.Time;
         local R1: number, G1: number, B1: number = A.Value.R, A.Value.G, A.Value.B;
         local R2: number, G2: number, B2: number = B.Value.R, B.Value.G, B.Value.B;
 
-        local color: Color3 = Color3.new(general(R1, R2), general(G1, G2), general(B1, B2));
+        local color: Color3 = Color3.new(__getLerp("number", R1, R2, alpha), __getLerp("number", G1, G2, alpha), __getLerp("number", B1, B2, alpha));
 
-        return ColorSequenceKeypoint.new(general(T1, T2), color);
+        return ColorSequenceKeypoint.new(__getLerp("number", T1, T2, alpha), color);
     end;
 
-    local function dateTime(): positionType
-        local A: DateTime = A;
-        local B: DateTime = B;
+    local function dateTime(): DateTime
+        A, B = A :: DateTime, B :: DateTime;
 
         local T1: number, T2: number = A.UnixTimestampMillis, B.UnixTimestampMillis;
 
-        return DateTime.fromUnixTimestampMillis(general(T1, T2));
+        return DateTime.fromUnixTimestampMillis(__getLerp("number", T1, T2, alpha));
     end;
 
-    local function numberRange(): positionType
-        local A: NumberRange = A;
-        local B: NumberRange = B;
+    local function number(): number
+        A, B = A :: number, B :: number;
+
+        return A + (B - A) * alpha;
+    end;
+
+    local function numberRange(): NumberRange
+        A, B = A :: NumberRange, B :: NumberRange;
 
         local Min1: number, Min2: number = A.Min, B.Min;
         local Max1: number, Max2: number = A.Max, B.Max;
 
-        return NumberRange.new(general(Min1, Min2), general(Max1, Max2));
+        return NumberRange.new(__getLerp("number", Min1, Min2, alpha), __getLerp("number", Max1, Max2, alpha));
     end;
 
-    local function numberSequenceKeypoint(): positionType
-        local A: NumberSequenceKeypoint = A;
-        local B: NumberSequenceKeypoint = B;
+    local function numberSequenceKeypoint(): NumberSequenceKeypoint
+        A, B = A :: NumberSequenceKeypoint, B :: NumberSequenceKeypoint;
 
         local E1: number, E2: number = A.Envelope, B.Envelope;
         local T1: number, T2: number = A.Time, B.Time;
         local V1: number, V2: number = A.Value, B.Value;
 
-        return NumberSequenceKeypoint.new(general(T1, T2), general(V1, V2), general(E1, E2));
+        return NumberSequenceKeypoint.new(__getLerp("number", T1, T2, alpha), __getLerp("number", V1, V2, alpha), __getLerp("number", E1, E2, alpha));
     end;
 
-    local function ray(): positionType
-        local A: Ray = A;
-        local B: Ray = B;
+    local function ray(): Ray
+        A, B = A :: Ray, B :: Ray;
 
         local D1: Vector3, D2: Vector3 = A.Direction, B.Direction;
         local O1: Vector3, O2: Vector3 = A.Origin, B.Origin;
 
-        local V1: Vector3 = Vector3.new(general(O1.X, O2.X), general(O1.Y, O2.Y), general(O1.Z, O2.Z));
-        local V2: Vector3 = Vector3.new(general(D1.X, D2.X), general(D1.Y, D2.Y), general(D1.Z, D2.Z));
+        local V1: Vector3 = Vector3.new(__getLerp("number", O1.X, O2.X, alpha), __getLerp("number", O1.Y, O2.Y, alpha), __getLerp("number", O1.Z, O2.Z, alpha));
+        local V2: Vector3 = Vector3.new(__getLerp("number", D1.X, D2.X, alpha), __getLerp("number", D1.Y, D2.Y, alpha), __getLerp("number", D1.Z, D2.Z, alpha));
 
         return Ray.new(V1, V2);
     end;
 
-    local function rect(): positionType
-        local A: Rect = A;
-        local B: Rect = B;
+    local function rect(): Rect
+        A, B = A :: Rect, B :: Rect;
 
         local Min1: Vector2, Min2: Vector2 = A.Min, B.Min;
         local Max1: Vector2, Max2: Vector2 = A.Max, B.Max;
 
-        local V1: Vector2 = Vector2.new(general(Min1.X, Min2.X), general(Min1.Y, Min2.Y));
-        local V2: Vector2 = Vector2.new(general(Max1.X, Max2.X), general(Max1.Y, Max2.Y));
+        local V1: Vector2 = Vector2.new(__getLerp("number", Min1.X, Min2.X, alpha), __getLerp("number", Min1.Y, Min2.Y, alpha));
+        local V2: Vector2 = Vector2.new(__getLerp("number", Max1.X, Max2.X, alpha), __getLerp("number", Max1.Y, Max2.Y, alpha));
 
         return Rect.new(V1, V2);
     end;
 
-    local function region3(): positionType
-        local A: Region3 = A;
-        local B: Region3 = B;
+    local function region3(): Region3
+        A, B = A :: Region3, B :: Region3;
 
         local position: Vector3 = A.CFrame.Position:Lerp(B.CFrame.Position, alpha);
         local halfSize: Vector3 = A.Size:Lerp(B.Size, alpha) / 2;
@@ -389,30 +377,26 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
         return Region3.new(position - halfSize, position + halfSize);
     end;
 
-    local function cframe(): positionType
-        local A: CFrame = A;
-        local B: CFrame = B;
+    local function cframe(): CFrame
+        A, B = A :: CFrame, B :: CFrame;
 
         return A:Lerp(B, alpha);
     end;
 
-    local function udim2(): positionType
-        local A: UDim2 = A;
-        local B: UDim2 = B;
+    local function udim2(): UDim2
+        A, B = A :: UDim2, B :: UDim2;
 
         return A:Lerp(B, alpha);
     end;
 
-    local function vector2(): positionType
-        local A: Vector2 = A;
-        local B: Vector2 = B;
+    local function vector2(): Vector2
+        A, B = A :: Vector2, B :: Vector2;
 
         return A:Lerp(B, alpha);
     end;
 
-    local function vector3(): positionType
-        local A: Vector3 = A;
-        local B: Vector3 = B;
+    local function vector3(): Vector3
+        A, B = A :: Vector3, B :: Vector3;
 
         return A:Lerp(B, alpha);
     end;
@@ -422,7 +406,7 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
         ["Color3"] = color3;
         ["ColorSequenceKeypoint"] = colorSequenceKeypoint;
         ["DateTime"] = dateTime;
-        ["number"] = general;
+        ["number"] = number;
         ["NumberRange"] = numberRange;
         ["NumberSequenceKeypoint"] = numberSequenceKeypoint;
         ["Ray"] = ray;
@@ -433,7 +417,7 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
         ["Vector3"] = vector3;
     };
 
-    return map[variant](A, B);
+    return map[variant]();
 end;
 
 function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?}?, A: positionType, B: positionType, schedule: number): positionType
@@ -457,10 +441,11 @@ function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?}
     local style: easeStyle, direction: easeDirection = unpack(easeOption);
 
     local alpha: number = __getAlpha(style, direction, schedule);
-    local typeA: string, typeB: string = typeof(A), typeof(B);
 
-    if (typeA == typeB) then
-        return __getLerp(typeA, A, B, alpha);
+    if (typeof(A) == typeof(B)) then
+        local positionType: string = typeof(A) or typeof(B);
+
+        return __getLerp(positionType, A, B, alpha);
     end;
 
     error("Tween-V - Error // Only same types of position can lerp!");
