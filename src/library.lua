@@ -27,11 +27,12 @@ local library: table = {};
 --// functions
 function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number): number
     local A: number, B: number;
-
+    --#region // Linear
     local function linear(): number
         return schedule;
     end;
-
+    --#endregion
+    --#region // Quad
     local function quadIn(): number
         return schedule * schedule;
     end;
@@ -47,7 +48,8 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
             return 1 - pow(-2 * schedule + 2, 2) / 2;
         end;
     end;
-
+    --#endregion
+    --#region // Cubic
     local function cubicIn(): number
         return schedule * schedule * schedule;
     end;
@@ -63,7 +65,8 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
             return 1 - pow(-2 * schedule + 2, 3) / 2;
         end;
     end;
-
+    --#endregion
+    --#region // Quart
     local function quartIn(): number
         return schedule * schedule * schedule * schedule;
     end;
@@ -79,7 +82,8 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
             return 1 - pow(-2 * schedule + 2, 4) / 2;
         end;
     end;
-
+    --#endregion
+    --#region // Quint
     local function quintIn(): number
         return schedule * schedule * schedule * schedule * schedule;
     end;
@@ -95,7 +99,8 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
             return 1 - pow(-2 * schedule + 2, 5) / 2;
         end;
     end;
-
+    --#endregion
+    --#region // Sine
     local function sineIn(): number
         return 1 - cos((schedule * pi) / 2);
     end;
@@ -107,7 +112,8 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
     local function sineInOut(): number
         return -(cos(schedule * pi) - 1) / 2;
     end;
-
+    --#endregion
+    --#region // Expo
     local function expoIn(): number
         if (schedule == 0) then
             return 0;
@@ -137,7 +143,8 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
             return (2 - pow(2, -20 * schedule + 10)) / 2;
         end;
     end;
-
+    --#endregion
+    --#region // Circ
     local function circIn(): number
         return 1 - sqrt(1 - pow(schedule, 2));
     end;
@@ -153,7 +160,8 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
             return (sqrt(1 - pow(-2 * schedule, 2)) + 1) / 2;
         end;
     end;
-
+    --#endregion
+    --#region // Elastic
     local function elasticIn(): number
         A = (2 * pi) / 3;
 
@@ -193,7 +201,8 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
             return (pow(2, -20 * schedule + 10) * sin((20 * schedule - 11.125) * A)) / 2 + 1;
         end;
     end;
-
+    --#endregion
+    --#region // Back
     local function backIn(): number
         A, B = 1.70158, A + 1;
 
@@ -215,7 +224,8 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
             return (pow(2 * schedule - 2, 2) * ((B + 1) * (2 * schedule - 2) + B) + 2) / 2;
         end;
     end;
-
+    --#endregion
+    --#region // Bounce
     local function bounceOut(bSchedule: number): number
         A, B = 7.5625, 2.75;
 
@@ -247,7 +257,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
             return (1 + bounceOut(1 - 2 * schedule)) / 2;
         end;
     end;
-
+    --#endregion
     local map: table = {
         ["LinearIn"] = linear;
         ["LinearOut"] = linear;
@@ -290,6 +300,7 @@ function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number
 end;
 
 function __getLerp(variant: string, A: positionType, B: positionType, alpha: number): positionType
+    --#region // Color3
     local function color3(): Color3
         A, B = A :: Color3, B :: Color3;
 
@@ -298,7 +309,8 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
 
         return Color3.new(__getLerp("number", R1, R2, alpha), __getLerp("number", G1, G2, alpha), __getLerp("number", B1, B2, alpha));
     end;
-
+    --#endregion
+    --#region // ColorSequenceKeypoint
     local function colorSequenceKeypoint(): ColorSequenceKeypoint
         A, B = A :: ColorSequenceKeypoint, B :: ColorSequenceKeypoint;
 
@@ -310,7 +322,8 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
 
         return ColorSequenceKeypoint.new(__getLerp("number", T1, T2, alpha), color);
     end;
-
+    --#endregion
+    --#region // DateTime
     local function dateTime(): DateTime
         A, B = A :: DateTime, B :: DateTime;
 
@@ -318,13 +331,15 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
 
         return DateTime.fromUnixTimestampMillis(__getLerp("number", T1, T2, alpha));
     end;
-
+    --#endregion
+    --#region // number
     local function number(): number
         A, B = A :: number, B :: number;
 
         return A + (B - A) * alpha;
     end;
-
+    --#endregion
+    --#region // NumberRange
     local function numberRange(): NumberRange
         A, B = A :: NumberRange, B :: NumberRange;
 
@@ -333,7 +348,8 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
 
         return NumberRange.new(__getLerp("number", Min1, Min2, alpha), __getLerp("number", Max1, Max2, alpha));
     end;
-
+    --#endregion
+    --#region // NumberSequenceKeypoint
     local function numberSequenceKeypoint(): NumberSequenceKeypoint
         A, B = A :: NumberSequenceKeypoint, B :: NumberSequenceKeypoint;
 
@@ -343,7 +359,8 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
 
         return NumberSequenceKeypoint.new(__getLerp("number", T1, T2, alpha), __getLerp("number", V1, V2, alpha), __getLerp("number", E1, E2, alpha));
     end;
-
+    --#endregion
+    --#region // Ray
     local function ray(): Ray
         A, B = A :: Ray, B :: Ray;
 
@@ -355,7 +372,8 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
 
         return Ray.new(V1, V2);
     end;
-
+    --#endregion
+    --#region // Rect
     local function rect(): Rect
         A, B = A :: Rect, B :: Rect;
 
@@ -367,7 +385,8 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
 
         return Rect.new(V1, V2);
     end;
-
+    --#endregion
+    --#region // Region3
     local function region3(): Region3
         A, B = A :: Region3, B :: Region3;
 
@@ -376,31 +395,35 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
 
         return Region3.new(position - halfSize, position + halfSize);
     end;
-
+    --#endregion
+    --#region // CFrame
     local function cframe(): CFrame
         A, B = A :: CFrame, B :: CFrame;
 
         return A:Lerp(B, alpha);
     end;
-
+    --#endregion
+    --#region // UDim2
     local function udim2(): UDim2
         A, B = A :: UDim2, B :: UDim2;
 
         return A:Lerp(B, alpha);
     end;
-
+    --#endregion
+    --#region // Vector2
     local function vector2(): Vector2
         A, B = A :: Vector2, B :: Vector2;
 
         return A:Lerp(B, alpha);
     end;
-
+    --#endregion
+    --#region // Vector3
     local function vector3(): Vector3
         A, B = A :: Vector3, B :: Vector3;
 
         return A:Lerp(B, alpha);
     end;
-
+    --#endregion
     local map: table = {
         ["CFrame"] = cframe;
         ["Color3"] = color3;
@@ -438,9 +461,7 @@ function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?}
         easeOption.direction = "In";
     end;
 
-    local style: easeStyle, direction: easeDirection = unpack(easeOption);
-
-    local alpha: number = __getAlpha(style, direction, schedule);
+    local alpha: number = __getAlpha(easeOption.style, easeOption.direction, schedule);
 
     if (typeof(A) == typeof(B)) then
         local positionType: string = typeof(A) or typeof(B);
