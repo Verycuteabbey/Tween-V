@@ -14,7 +14,7 @@
 
 前要提醒：
 
-（欠优化）Tween-V - Library // 是负责返回所提供参数的当前插值进度，支持常用类型（详细可见 positionType 定义）
+（待完善）Tween-V - Library // 是负责返回所提供参数的当前插值进度，支持常用类型（详细可见 positionType 定义）
 
 （开发中）Tween-V - Controller // 是负责处理 Library 所返回的插值进度，使用 Heartbeat 进行自适应插值
 
