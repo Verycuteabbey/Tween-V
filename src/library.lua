@@ -444,6 +444,7 @@ function __getLerp(variant: string, A: positionType, B: positionType, alpha: num
 end;
 
 function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?}?, A: positionType, B: positionType, schedule: number): positionType
+    --#region // default
     if (not easeOption) then
         warn("Tween-V - Warning // A empty easeOption has been given, using default");
 
@@ -460,7 +461,7 @@ function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?}
 
         easeOption.direction = "In";
     end;
-
+    --#endregion
     local alpha: number = __getAlpha(easeOption.style, easeOption.direction, schedule);
 
     if (typeof(A) == typeof(B)) then
