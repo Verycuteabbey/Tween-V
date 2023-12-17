@@ -7,23 +7,24 @@
 
 
     Author // VoID(@Verycuteabbey)
+    Contributor // ChinoHTea(@HarukaTea), smallpenguin666
 ]]--
 
 --// defines
 local defer = task.defer;
+local insert = table.insert;
 
 type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce";
 type easeDirection = "In" | "Out" | "InOut";
 type positionType = CFrame | Color3 | ColorSequenceKeypoint | DateTime | number | NumberRange | NumberSequenceKeypoint | Ray | Rect | Region3 | UDim2 | Vector2 | Vector3;
 
-local library = require(script.Parent);
+local library = require(script.library);
 local runService = game:GetService("RunService");
 
 local controller = {};
 controller.tweens = {};
 
 --// functions
---#region // controller
 function controller:Create(instance: Instance, property: string, easeOption: {style: easeStyle?, direction: easeDirection?, duration: number?}?, target: positionType): table
     --#region // default
     if (not easeOption) then
@@ -147,8 +148,8 @@ function controller:Create(instance: Instance, property: string, easeOption: {st
     end;
     --#endregion
     setmetatable(object, meta);
-    controller.tweens[#controller.tweens + 1] = object :: table;
 
+    insert(object);
     return object;
 end;
 
@@ -165,8 +166,7 @@ function controller:Find(instance: Instance, property: string): table?
 
     return result;
 end;
---#endregion
---#region // collector
+
 function __collector()
     while (task.wait(60)) do
         for N, V in pairs(controller.tweens) do
@@ -181,6 +181,5 @@ function __collector()
 end;
 
 defer(__collector);
---#endregion
 
 return controller;
