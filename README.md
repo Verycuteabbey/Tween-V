@@ -16,7 +16,9 @@
 
 （待完善类型支持）Tween-V - Library // 是负责返回所提供参数的当前插值进度的支持库，常见类型均可用（详细可见 positionType 定义）
 
-（基础部分已完成）Tween-V - Controller // 是负责处理 Library 所返回的插值进度的控制器，使用 Heartbeat 进行自适应插值
+（待逻辑优化）Tween-V - Controller // 是负责处理 Library 所返回的插值进度的控制器，使用 Heartbeat 进行自适应插值
+
+---
 
 ### 单独使用 Library
 
@@ -91,42 +93,56 @@ print(result);
 
 使用下列函数即可创建缓动：
 
-> 控制器默认 Library 路径在其之上，建议存放位置在对应
+> 控制器默认 Library 路径在其之下，建议存放位置就如刚才所说
 
 ```lua
-local tweenV = require(path.to.controller); -- 记得换成自己存放的路径
+local tweenV = require(script.library);
 
 tweenV:Create(instance: Instance, property: string, easeOption: {style: easeStyle?, direction: easeDirection?, duration: number?}?, target: positionType): table
 ```
 
-instance 就是你缓动的目标，property 是需要缓动的属性
+instance 就是你缓动的目标（不是 Instance.Name），property 是需要缓动的属性（传的是名字）
 
 easeOption 就不需要我介绍了吧？可有可无
 
 target 就是你缓动最终的位置（也就是 Library:Lerp() 参数 B: positionType），同样需要满足 positionType 定义
 
+**你需要注意的是，如果你之前有创建过一个一模一样对象的缓动，那么再次调用 Create() 就是在覆盖原本的设置；除非被计数器回收，否则不会再次创建一个新的给你**
+
 ---
 
-当调用之后会返回一个表（专业点叫对象）给你，比如：
+当调用之后会返回一个对象给你，可参考如下： 
 
 ```lua
 local object = controller:Create(...);
 
-object:Continue(); -- 从暂停的位置开始缓动
-object:Replay(); -- 重新缓动一次（会打断当前！！！）
-object:Start(); -- 缓动，启动！
-object:Stop(); -- 暂停缓动
+object:Replay(); -- one more time!（位置会被重置且会打断当前）
+object:Resume(); -- 时间再次流动......（不会重置位置也不会打断，因为本身就是解除冻结）
+object:Start(); -- 函数，启动！（指启动缓动）
+object:Yield(); -- 冻住，不许走！
 ```
-
-什么？你说怎么没有回收的？不必担心，在你调用 Start() 后会启动自计时 60s
-
-空闲会持续扣除直到进入 recycle 状态，并有 10s 缓冲，全部倒计时完毕后自动清除自己（此时再调用会直接 nil index）
-
-**现在仅仅只是基础部分完成，多线程和回收利用还得再等等**
 
 ---
 
-# 然后？
+什么？你说回收去哪了？不必担心，会有一个捡~~垃圾~~ flag 标记的线程计数器，周期 60s 为一次
+
+但需要注意的是，一旦被计数器回收，再调用就会 nil index, 建议 controller:Find() 来作为引用对象（需额外加以判断 nil/table）：
+
+> 由于 local 的特性，建议在使用完后手动 nil (也可以不用，因为 local 的生命周期短), 等待 controller 池去回收
+
+```lua
+local tweenV = require(path.to.controller); -- 记得换成自己存放的路径
+
+tweenV:Find(instance: Instance, property: string): table?
+```
+
+instance 不用多说了，就是你要查找的对象（不是 Instance.Name）
+
+property 即是缓动的属性（传的是名字）
+
+---
+
+## 然后？
 
 然后就没了，如果你有更好的想法欢迎提交 PR
 
@@ -136,4 +152,4 @@ object:Stop(); -- 暂停缓动
 
 真没了，再见...？
 
-MIT License @ 2023 The Mystery Team // Verycuteabbey
+**MIT License @ 2023 The Mystery Team // Verycuteabbey**
