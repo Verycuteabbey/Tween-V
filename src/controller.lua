@@ -12,7 +12,7 @@
 
 --// defines
 local defer = task.defer;
-local insert = table.insert;
+local remove = table.remove;
 
 type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce";
 type easeDirection = "In" | "Out" | "InOut";
@@ -53,131 +53,136 @@ function controller:Create(instance: Instance, property: string, easeOption: {st
     local result = controller:Find(instance, property);
 
     if (result) then
-        local meta = getmetatable(result);
+        local info = result.info :: table;
+        local status = result.status :: table;
 
-        meta.instance.recentValue = instance[property] :: positionType;
-        meta.instance.target = target :: positionType;
-        meta.instance.easeOption = easeOption :: table;
+        info.recentValue = instance[property] :: positionType;
+        info.target = target :: positionType;
+        info.easeOption = easeOption :: table;
+        result.funcs = nil;
+        result.thread = nil;
+        status.started = false;
 
-        meta.funcs = nil;
-        meta.thread = nil;
-        meta.status.started = false;
-
-        setmetatable(result, meta);
+        result.info = info;
+        result.status = status;
         return result;
     end;
     --#endregion
     local object = {};
 
-    local meta = {};
-    meta.__index = meta;
+    object.funcs = nil;
+    object.thread = nil;
 
-    meta.instance = {
-        self = instance;
+    object.info = {
+        instance = instance;
         property = property;
-        recentValue = instance[property];
         target = target;
         easeOption = easeOption;
     };
-    meta.status = {
+    object.status = {
         running = false;
         started = false;
         yield = false;
     };
     --#region // Replay
     function object:Replay()
-        local meta = getmetatable(self);
+        if (not self.funcs) then return end;
 
-        if (not meta.funcs) then return end;
-
-        meta.thread:Disconnect();
-        local connection = runService.Heartbeat:Connect(meta.funcs);
-        meta.thread = connection :: RBXScriptConnection;
-
-        setmetatable(self, meta);
+        self.thread:Disconnect();
+        local connection = runService.Heartbeat:Connect(self.funcs);
+        self.thread = connection :: RBXScriptConnection;
     end;
     --#endregion
     --#region // Resume
     function object:Resume()
-        local meta = getmetatable(self);
+        local status = self.status :: table;
 
-        meta.options.yield = false;
-        setmetatable(self, meta);
+        status.yield = false;
+
+        self.status = status;
     end;
     --#endregion
     --#region // Start
     function object:Start()
-        local meta = getmetatable(self);
+        local info = self.info :: table;
+        local status = self.status :: table;
 
-        if (meta.status.started) then return end;
+        if (status.started) then return end;
 
-        meta.status.started = true;
+        status.started = true;
 
-        local easeOption = meta.instance.easeOption :: table;
+        local easeOption = info.easeOption :: table;
         local nowTime = 0;
 
         local function tween(deltaTime: number)
-            if (meta.status.yield) then return end;
+            if (status.yield) then return end;
 
-            meta.status.running = true;
+            status.running = true;
 
             if (nowTime > easeOption.duration) then
-                meta.status.running = false;
-                meta.thread:Disconnect();
+                status.running = false;
+                self.thread:Disconnect();
                 nowTime = easeOption.duration :: number;
             end;
 
-            meta.instance.self[meta.instance.property] = library:Lerp(easeOption, meta.instance.recentValue, meta.instance.target, nowTime / easeOption.duration);
+            info.instance[info.property] = library:Lerp(easeOption, info.recentValue, info.target, nowTime / easeOption.duration);
             nowTime += deltaTime;
-            setmetatable(self, meta);
         end;
 
+        self.funcs = tween;
         local connection = runService.Heartbeat:Connect(tween);
-        meta.thread = connection :: RBXScriptConnection;
-        meta.funcs = tween;
+        self.thread = connection :: RBXScriptConnection;
 
-        setmetatable(self, meta);
+        self.info = info;
+        self.status = status;
     end;
     --#endregion
     --#region // Yield
     function object:Yield()
-        local meta = getmetatable(self);
+        local status = self.status :: table;
 
-        meta.options.yield = true;
-        setmetatable(self, meta);
+        status.yield = true;
+
+        self.status = status;
     end;
     --#endregion
-    setmetatable(object, meta);
-
-    insert(object);
+    __insert(controller.tweens, object);
     return object;
 end;
 
 function controller:Find(instance: Instance, property: string): table?
-    local result: table?;
-
     for _, V in pairs(controller.tweens) do
-        local meta = getmetatable(V);
+        local info = V.info;
 
-        if (meta.instance.self == instance) and (meta.instance.property == property) then
-            result = V;
+        if (info.instance == instance) and (info.property == property) then
+            return V;
         end;
     end;
 
-    return result;
+    return;
 end;
 
 function __collector()
     while (task.wait(60)) do
         for N, V in pairs(controller.tweens) do
-            local meta = getmetatable(V);
+            local status = V.status;
 
-            if (not meta.status.running) then
-                setmetatable(V, {});
-                controller.tweens[N] = nil;
+            if (not status.running) then
+                remove(V, N);
             end;
         end;
     end;
+end;
+
+function __insert(target: table, value: any)
+    for I = 1, #target do
+        if (target[I] == nil) then
+            target[I] = value;
+            return;
+        end;
+    end;
+
+    target[#target + 1] = value;
 end;
 
 defer(__collector);
