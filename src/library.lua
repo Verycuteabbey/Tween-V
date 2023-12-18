@@ -465,8 +465,10 @@ function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?}
     --#endregion
     local alpha = __getAlpha(easeOption.style, easeOption.direction, schedule);
 
-    if (typeof(A) == typeof(B)) then
-        local positionType = typeof(A) or typeof(B);
+    local typeA, typeB = typeof(A), typeof(B);
+
+    if (typeA == typeB) then
+        local positionType = typeA :: string or typeB :: string;
 
         return __getLerp(positionType, A, B, alpha);
     end;
