@@ -52,7 +52,7 @@ easeOption 包含以下内容，可以填写 nil 或空表, 当出现前两个�
 > 注：展示的示例为默认值
 
 ```lua
-local easeOption: table = {
+local easeOption = {
     style = "Linear",
     direction = "In"
 };
