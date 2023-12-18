@@ -13,6 +13,7 @@
 --// defines
 local cos = math.cos;
 local format = string.format;
+local freeze = table.freeze;
 local pi = math.pi;
 local pow = math.pow;
 local sin = math.sin;
@@ -473,4 +474,4 @@ function library:Lerp(easeOption: {style: easeStyle?, direction: easeDirection?}
     error("Tween-V - Error // Only same types of position can lerp!");
 end;
 
-return library;
+return freeze(library);

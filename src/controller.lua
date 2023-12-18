@@ -12,6 +12,7 @@
 
 --// defines
 local defer = task.defer;
+local freeze = table.freeze;
 local remove = table.remove;
 
 type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce";
@@ -187,4 +188,4 @@ end;
 
 defer(__collector);
 
-return controller;
+return freeze(controller);
