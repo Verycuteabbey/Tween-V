@@ -124,24 +124,6 @@ object:Yield(); -- 冻住，不许走！
 
 ---
 
-什么？你说回收去哪了？不必担心，会有一个捡~~垃圾~~ flag 标记的线程计数器，周期 60s 为一次
-
-但需要注意的是，一旦被计数器回收，再调用就会 nil index, 建议 controller:Find() 来作为引用对象（需额外加以判断 nil/table）：
-
-> 由于 local 的特性，建议在使用完后手动 nil (也可以不用，因为 local 的生命周期短), 等待 controller 池去回收
-
-```lua
-local tweenV = require(path.to.controller); -- 记得换成自己存放的路径
-
-tweenV:Find(instance: Instance, property: string): table?
-```
-
-instance 不用多说了，就是你要查找的对象（不是 Instance.Name）
-
-property 即是缓动的属性（传的是名字）
-
----
-
 ## 然后？
 
 然后就没了，如果你有更好的想法欢迎提交 PR
