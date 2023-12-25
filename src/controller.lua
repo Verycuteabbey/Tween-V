@@ -11,9 +11,7 @@
 ]]--
 
 --// defines
-local defer = task.defer;
 local freeze = table.freeze;
-local remove = table.remove;
 
 type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce";
 type easeDirection = "In" | "Out" | "InOut";
@@ -23,6 +21,7 @@ local library = require(script.library);
 local runService = game:GetService("RunService");
 
 local controller = {};
+
 controller.tweens = {};
 
 --// functions
@@ -50,25 +49,6 @@ function controller:Create(instance: Instance, property: string, easeOption: {st
         easeOption.duration = 1;
     end;
     --#endregion
-    --#region // reuse
-    local result = controller:Find(instance, property);
-
-    if (result) then
-        local info = result.info :: table;
-        local status = result.status :: table;
-
-        info.recentValue = instance[property] :: positionType;
-        info.target = target :: positionType;
-        info.easeOption = easeOption :: table;
-        result.funcs = nil;
-        result.thread = nil;
-        status.started = false;
-
-        result.info = info;
-        result.status = status;
-        return result;
-    end;
-    --#endregion
     local object = {};
 
     object.funcs = nil;
@@ -78,6 +58,7 @@ function controller:Create(instance: Instance, property: string, easeOption: {st
         instance = instance;
         property = property;
         target = target;
+        value = instance[property];
         easeOption = easeOption;
     };
     object.status = {
@@ -97,6 +78,8 @@ function controller:Create(instance: Instance, property: string, easeOption: {st
     --#region // Resume
     function object:Resume()
         local status = self.status :: table;
+
+        if (status.running) then return end;
 
         status.yield = false;
 
@@ -126,7 +109,7 @@ function controller:Create(instance: Instance, property: string, easeOption: {st
                 nowTime = easeOption.duration :: number;
             end;
 
-            info.instance[info.property] = library:Lerp(easeOption, info.recentValue, info.target, nowTime / easeOption.duration);
+            info.instance[info.property] = library:Lerp(easeOption, info.value, info.target, nowTime / easeOption.duration);
             nowTime += deltaTime;
         end;
 
@@ -142,50 +125,14 @@ function controller:Create(instance: Instance, property: string, easeOption: {st
     function object:Yield()
         local status = self.status :: table;
 
+        if (not status.running) then return end;
+
         status.yield = true;
 
         self.status = status;
     end;
     --#endregion
-    __insert(controller.tweens, object);
     return object;
 end;
-
-function controller:Find(instance: Instance, property: string): table?
-    for _, V in pairs(controller.tweens) do
-        local info = V.info;
-
-        if (info.instance == instance) and (info.property == property) then
-            return V;
-        end;
-    end;
-
-    return;
-end;
-
-function __collector()
-    while (task.wait(60)) do
-        for N, V in pairs(controller.tweens) do
-            local status = V.status;
-
-            if (not status.running) then
-                remove(V, N);
-            end;
-        end;
-    end;
-end;
-
-function __insert(target: table, value: any)
-    for I = 1, #target do
-        if (target[I] == nil) then
-            target[I] = value;
-            return;
-        end;
-    end;
-
-    target[#target + 1] = value;
-end;
-
-defer(__collector);
 
 return freeze(controller);
