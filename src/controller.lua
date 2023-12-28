@@ -8,14 +8,28 @@
 
     Author // VoID(@Verycuteabbey)
     Contributor // ChinoHTea(@HarukaTea), smallpenguin666
-]]--
+]]
+--
 
 --// defines
 local freeze = table.freeze
 
 type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce"
 type easeDirection = "In" | "Out" | "InOut"
-type positionType = CFrame | Color3 | ColorSequenceKeypoint | DateTime | number | NumberRange | NumberSequenceKeypoint | Ray | Rect | Region3 | UDim2 | Vector2 | Vector3
+type positionType =
+	CFrame
+	| Color3
+	| ColorSequenceKeypoint
+	| DateTime
+	| number
+	| NumberRange
+	| NumberSequenceKeypoint
+	| Ray
+	| Rect
+	| Region3
+	| UDim2
+	| Vector2
+	| Vector3
 
 local library = require(script.library)
 local runService = game:GetService("RunService")
@@ -23,114 +37,130 @@ local runService = game:GetService("RunService")
 local controller = {}
 
 --// functions
-function controller:Create(instance: Instance, property: string, easeOption: {style: easeStyle?, direction: easeDirection?, duration: number?}?, target: positionType): table
-    --#region // default
-    if (not easeOption) then
-        warn("Tween-V - Warning // empty easeOptions has been given, using default")
+function controller:Create(
+	instance: Instance,
+	property: string,
+	easeOption: { style: easeStyle?, direction: easeDirection?, duration: number? }?,
+	target: positionType
+): table
+	--#region // default
+	if not easeOption then
+		warn("Tween-V - Warning // empty easeOptions has been given, using default")
 
-        easeOption = {
-            style = "Linear",
-            direction = "In",
-            duration = 1
-        }
-    elseif (not easeOption.style) then
-        warn("Tween-V - Warning // easeOptions has given a empty style, using default")
+		easeOption = {
+			style = "Linear",
+			direction = "In",
+			duration = 1,
+		}
+	elseif not easeOption.style then
+		warn("Tween-V - Warning // easeOptions has given a empty style, using default")
 
-        easeOption.style = "Linear"
-    elseif (not easeOption.direction) then
-        warn("Tween-V - Warning // easeOptions has given a empty direction, using default")
+		easeOption.style = "Linear"
+	elseif not easeOption.direction then
+		warn("Tween-V - Warning // easeOptions has given a empty direction, using default")
 
-        easeOption.direction = "In"
-    elseif (not easeOption.duration) then
-        warn("Tween-V - Warning // easeOptions has given a empty duration, using default")
+		easeOption.direction = "In"
+	elseif not easeOption.duration then
+		warn("Tween-V - Warning // easeOptions has given a empty duration, using default")
 
-        easeOption.duration = 1
-    end
-    --#endregion
-    local object = {}
+		easeOption.duration = 1
+	end
+	--#endregion
+	local object = {}
 
-    object.funcs = nil
-    object.thread = nil
+	object.funcs = nil
+	object.thread = nil
 
-    object.info = {
-        instance = instance;
-        property = property;
-        target = target;
-        value = instance[property];
-        easeOption = easeOption
-    }
-    object.status = {
-        running = false,
-        started = false,
-        yield = false
-    }
-    --#region // Replay
-    function object:Replay()
-        if (not self.funcs) then return end
+	object.info = {
+		instance = instance,
+		property = property,
+		target = target,
+		value = instance[property],
+		easeOption = easeOption,
+	}
+	object.status = {
+		running = false,
+		started = false,
+		yield = false,
+	}
+	--#region // Replay
+	function object:Replay()
+		if not self.funcs then
+			return
+		end
 
-        self.thread:Disconnect()
-        local connection = runService.Heartbeat:Connect(self.funcs)
-        self.thread = connection :: RBXScriptConnection
-    end
-    --#endregion
-    --#region // Resume
-    function object:Resume()
-        local status = self.status :: table
+		self.thread:Disconnect()
+		local connection = runService.Heartbeat:Connect(self.funcs)
+		self.thread = connection :: RBXScriptConnection
+	end
+	--#endregion
+	--#region // Resume
+	function object:Resume()
+		local status = self.status :: table
 
-        if (status.running) then return end
+		if status.running then
+			return
+		end
 
-        status.yield = false
+		status.yield = false
 
-        self.status = status
-    end
-    --#endregion
-    --#region // Start
-    function object:Start()
-        local info = self.info :: table
-        local status = self.status :: table
+		self.status = status
+	end
+	--#endregion
+	--#region // Start
+	function object:Start()
+		local info = self.info :: table
+		local status = self.status :: table
 
-        if (status.started) then return end
+		if status.started then
+			return
+		end
 
-        status.started = true
+		status.started = true
 
-        local easeOption = info.easeOption :: table
-        local nowTime = 0
+		local easeOption = info.easeOption :: table
+		local nowTime = 0
 
-        local function tween(deltaTime: number)
-            if (status.yield) then return end
+		local function tween(deltaTime: number)
+			if status.yield then
+				return
+			end
 
-            status.running = true
+			status.running = true
 
-            if (nowTime > easeOption.duration) then
-                status.running = false
-                self.thread:Disconnect()
-                nowTime = easeOption.duration :: number
-            end
+			if nowTime > easeOption.duration then
+				status.running = false
+				self.thread:Disconnect()
+				nowTime = easeOption.duration :: number
+			end
 
-            info.instance[info.property] = library:Lerp(easeOption, info.value, info.target, nowTime / easeOption.duration)
-            nowTime += deltaTime
-        end
+			info.instance[info.property] =
+				library:Lerp(easeOption, info.value, info.target, nowTime / easeOption.duration)
+			nowTime += deltaTime
+		end
 
-        self.funcs = tween
-        local connection = runService.Heartbeat:Connect(tween)
-        self.thread = connection :: RBXScriptConnection
+		self.funcs = tween
+		local connection = runService.Heartbeat:Connect(tween)
+		self.thread = connection :: RBXScriptConnection
 
-        self.info = info
-        self.status = status
-    end
-    --#endregion
-    --#region // Yield
-    function object:Yield()
-        local status = self.status :: table
+		self.info = info
+		self.status = status
+	end
+	--#endregion
+	--#region // Yield
+	function object:Yield()
+		local status = self.status :: table
 
-        if (not status.running) then return end
+		if not status.running then
+			return
+		end
 
-        status.yield = true
+		status.yield = true
 
-        self.status = status
-    end
-    --#endregion
-    return object
+		self.status = status
+	end
+	--#endregion
+	return object
 end
 
 return freeze(controller)
