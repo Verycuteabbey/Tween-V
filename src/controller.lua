@@ -39,9 +39,8 @@ local controller = {}
 --// functions
 function controller:Create(
 	instance: Instance,
-	property: string,
 	easeOption: { style: easeStyle?, direction: easeDirection?, duration: number? }?,
-	target: positionType
+	target: table
 ): table
 	--#region // default
 	if not easeOption then
@@ -69,14 +68,13 @@ function controller:Create(
 	local object = {}
 
 	object.funcs = nil
-	object.thread = nil
+	object.threads = {}
 
 	object.info = {
 		instance = instance,
-		property = property,
 		target = target,
-		value = instance[property],
 		easeOption = easeOption,
+		properties = {},
 	}
 	object.status = {
 		running = false,
@@ -109,42 +107,55 @@ function controller:Create(
 	--#endregion
 	--#region // Start
 	function object:Start()
-		local info = self.info :: table
-		local status = self.status :: table
+		local info = self.info
+		local instance = info.instance
+		local target = info.target
+
+		local status = self.status
 
 		if status.started then
 			return
 		end
 
-		status.started = true
+		self.status.started = true
 
-		local easeOption = info.easeOption :: table
+		for K, _ in pairs(target) do
+			self.properties[K] = instance[K]
+		end
+
+		local easeOption = self.info.easeOption :: table
+		local properties = self.properties :: table
 		local nowTime = 0
 
-		local function tween(deltaTime: number)
-			if status.yield then
+		local function __tween(deltaTime: number, property: string)
+			if self.status.yield then
 				return
 			end
 
-			status.running = true
+			self.status.running = true
 
 			if nowTime > easeOption.duration then
-				status.running = false
-				self.thread:Disconnect()
+				self.status.running = false
+				self.threads[property]:Disconnect()
 				nowTime = easeOption.duration :: number
 			end
 
-			info.instance[info.property] =
-				library:Lerp(easeOption, info.value, info.target, nowTime / easeOption.duration)
+			instance[property] =
+				library:Lerp(easeOption, properties[property], target[property], nowTime / easeOption.duration)
 			nowTime += deltaTime
 		end
 
-		self.funcs = tween
-		local connection = runService.Heartbeat:Connect(tween)
-		self.thread = connection :: RBXScriptConnection
+		self.funcs = __tween
 
-		self.info = info
-		self.status = status
+		for K, _ in pairs(target) do
+            local function __main(deltaTime: number)
+                __tween(deltaTime, K)
+            end
+
+			local connection = runService.Heartbeat:Connect(__main)
+
+			self.threads[K] = connection
+		end
 	end
 	--#endregion
 	--#region // Yield
