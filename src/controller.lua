@@ -83,13 +83,25 @@ function controller:Create(
 	}
 	--#region // Replay
 	function object:Replay()
-		if not self.funcs then
+        local status = self.status
+
+		if not status.started then
 			return
 		end
 
-		self.thread:Disconnect()
-		local connection = runService.Heartbeat:Connect(self.funcs)
-		self.thread = connection :: RBXScriptConnection
+        self.status.running = false
+
+        local __tween = self.funcs
+
+        for K, _ in pairs(target) do
+            local function __main(deltaTime: number)
+                __tween(deltaTime, K)
+            end
+
+			local connection = runService.Heartbeat:Connect(__main)
+
+			self.threads[K] = connection
+		end
 	end
 	--#endregion
 	--#region // Resume
