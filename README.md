@@ -10,6 +10,10 @@
 
 ---
 
+**⚠ 你现在正在浏览 dev 分支，本分支并不保证任何稳定性！⚠**
+
+---
+
 ## 如何食用？
 
 前要提醒：
@@ -98,14 +102,24 @@ print(result);
 ```lua
 local tweenV = require(script.library);
 
-tweenV:Create(instance: Instance, property: string, easeOption: {style: easeStyle?, direction: easeDirection?, duration: number?}?, target: positionType): table
+tweenV:Create(instance: Instance, easeOption: {style: easeStyle?, direction: easeDirection?, duration: number?}?, target: table): table
 ```
 
-instance 就是你缓动的目标（不是 Instance.Name），property 是需要缓动的属性（传的是名字）
+instance 就是你缓动的目标（不是 Instance.Name）
 
 easeOption 就不需要我介绍了吧？可有可无
 
-target 就是你缓动最终的位置（也就是 Library:Lerp() 参数 B: positionType），同样需要满足 positionType 定义
+target 就是你缓动最终的位置（也就是 Library:Lerp() 参数 B: positionType），但是与 TweenService 类似为一个 table:
+
+```lua
+target = {
+    ["Position"] = Vector3.new(114, 514, 1919);
+    ["Size"] = Vector3.new(810, 114, 514);
+    ["Transparency"] = 0.5;
+}
+```
+
+可一个或多个属性同时进行
 
 ---
 
