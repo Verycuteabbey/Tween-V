@@ -12,10 +12,6 @@
 --
 
 --// defines
-local freeze = table.freeze
-
-type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce"
-type easeDirection = "In" | "Out" | "InOut"
 type positionType =
 	CFrame
 	| Color3
@@ -39,64 +35,51 @@ local controller = {}
 --// functions
 function controller:Create(
 	instance: Instance,
-	easeOption: { style: easeStyle?, direction: easeDirection?, duration: number? }?,
+	easeOptions: { style: Enum.EasingStyle?, direction: Enum.EasingDirection?, duration: number? }?,
 	target: table
 ): table
 	--#region // default
-	if not easeOption then
-		warn("Tween-V - Warning // empty easeOptions has been given, using default")
-
-		easeOption = {
-			style = "Linear",
-			direction = "In",
+	if not easeOptions then
+		easeOptions = {
+			style = Enum.EasingStyle.Linear,
+			direction = Enum.EasingDirection.InOut,
 			duration = 1,
 		}
-	elseif not easeOption.style then
-		warn("Tween-V - Warning // easeOptions has given a empty style, using default")
-
-		easeOption.style = "Linear"
-	elseif not easeOption.direction then
-		warn("Tween-V - Warning // easeOptions has given a empty direction, using default")
-
-		easeOption.direction = "In"
-	elseif not easeOption.duration then
-		warn("Tween-V - Warning // easeOptions has given a empty duration, using default")
-
-		easeOption.duration = 1
+	elseif not easeOptions.style then
+		easeOptions.style = Enum.EasingStyle.Linear
+	elseif not easeOptions.direction then
+		easeOptions.direction = Enum.EasingDirection.InOut
+	elseif not easeOptions.duration then
+		easeOptions.duration = 1
 	end
 	--#endregion
 	local object = {}
 
-	object.funcs = nil
+	object.func = nil
 	object.threads = {}
 
 	object.info = {
 		instance = instance,
-		target = target,
-		easeOption = easeOption,
+		easeOptions = easeOptions,
 		properties = {},
+		target = target
 	}
 	object.status = {
-		running = false,
 		started = false,
-		yield = false,
+		yield = false
 	}
 	--#region // Replay
 	function object:Replay()
-        local status = self.status
+		local status = self.status
 
-		if not status.started then
-			return
-		end
+		if not status.started then return end
 
-        self.status.running = false
+		local __tween = self.func
 
-        local __tween = self.funcs
-
-        for K, _ in pairs(target) do
-            local function __main(deltaTime: number)
-                __tween(deltaTime, K)
-            end
+		for K, _ in pairs(target) do
+			local function __main(deltaTime: number)
+				__tween(deltaTime, K)
+			end
 
 			local connection = runService.Heartbeat:Connect(__main)
 
@@ -106,11 +89,9 @@ function controller:Create(
 	--#endregion
 	--#region // Resume
 	function object:Resume()
-		local status = self.status :: table
+		local status = self.status
 
-		if status.running then
-			return
-		end
+		if not status.started then return end
 
 		status.yield = false
 
@@ -119,52 +100,66 @@ function controller:Create(
 	--#endregion
 	--#region // Start
 	function object:Start()
-		local info = self.info
-		local instance = info.instance
-		local target = info.target
-
+		--#region // check
 		local status = self.status
 
-		if status.started then
-			return
+		if status.started then return end
+
+		status.started = true
+		self.status = status
+		--#endregion
+		local info = self.info
+		--#region // convert
+		local temp = {}
+
+		for K, V in pairs(target) do
+			K = tostring(K)
+
+			info.properties[K] = info.instance[K]
+			temp[K] = V
 		end
 
-		self.status.started = true
+		target = temp
+		self.info = info
+		--#endregion
+		easeOptions = info.easeOptions
+		info = self.info
 
-		for K, _ in pairs(target) do
-			self.properties[K] = instance[K]
-		end
+		local function __main(deltaTime: number, property: string)
+			local nowTime = 0
 
-		local easeOption = self.info.easeOption :: table
-		local properties = self.properties :: table
-		local nowTime = 0
+			local function __tween()
+				status = self.status
 
-		local function __tween(deltaTime: number, property: string)
-			if self.status.yield then
-				return
+				if status.yield then return end
+
+				if nowTime > easeOptions.duration then
+					self.threads[property]:Disconnect()
+					nowTime = easeOptions.duration
+				end
+
+				local variant = library:Lerp(
+					easeOptions,
+					info.properties[property],
+					target[property],
+					nowTime / easeOptions.duration
+				)
+				instance[property] = variant
+
+				nowTime += deltaTime
 			end
 
-			self.status.running = true
-
-			if nowTime > easeOption.duration then
-				self.status.running = false
-				self.threads[property]:Disconnect()
-				nowTime = easeOption.duration :: number
-			end
-
-			instance[property] =
-				library:Lerp(easeOption, properties[property], target[property], nowTime / easeOption.duration)
-			nowTime += deltaTime
+			__tween()
 		end
 
-		self.funcs = __tween
+		self.func = __main
 
 		for K, _ in pairs(target) do
-            local function __main(deltaTime: number)
-                __tween(deltaTime, K)
-            end
+			local function __tween(deltaTime: number)
+				__main(deltaTime, K)
+			end
 
-			local connection = runService.Heartbeat:Connect(__main)
+			local connection = runService.Heartbeat:Connect(__tween)
 
 			self.threads[K] = connection
 		end
@@ -172,11 +167,9 @@ function controller:Create(
 	--#endregion
 	--#region // Yield
 	function object:Yield()
-		local status = self.status :: table
+		local status = self.status
 
-		if not status.running then
-			return
-		end
+		if not status.started then return end
 
 		status.yield = true
 
@@ -186,4 +179,4 @@ function controller:Create(
 	return object
 end
 
-return freeze(controller)
+return controller
