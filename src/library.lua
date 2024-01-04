@@ -283,7 +283,7 @@ local function __getAlpha(style: Enum.EasingStyle, direction: Enum.EasingDirecti
 	--#region // Back
 	local function __back()
 		local A = 1.70158
-        local B = A + 1
+		local B = A + 1
 
 		local function __in()
 			return B * schedule * schedule * schedule - A * schedule * schedule
@@ -362,7 +362,7 @@ local function __getAlpha(style: Enum.EasingStyle, direction: Enum.EasingDirecti
 		[Enum.EasingStyle.Circular] = __circ,
 		[Enum.EasingStyle.Elastic] = __elastic,
 		[Enum.EasingStyle.Back] = __back,
-		[Enum.EasingStyle.Bounce] = __bounce,
+		[Enum.EasingStyle.Bounce] = __bounce
 	}
 
 	return map[style]()
@@ -526,7 +526,7 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 		["Region3"] = region3,
 		["UDim2"] = udim2,
 		["Vector2"] = vector2,
-		["Vector3"] = vector3,
+		["Vector3"] = vector3
 	}
 
 	return map[variant]()
@@ -542,7 +542,7 @@ function library:Lerp(
 	if not easeOptions then
 		easeOptions = {
 			style = Enum.EasingStyle.Linear,
-			direction = Enum.EasingDirection.InOut
+			direction = Enum.EasingDirection.InOut,
 		}
 	elseif not easeOptions.style then
 		easeOptions.style = Enum.EasingStyle.Linear
