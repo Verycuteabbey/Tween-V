@@ -32,7 +32,7 @@
 local library = require(path.to.library) -- 记得换成自己存放的路径
 
 library:Lerp(
-    easeOptions: { style: Enum.EasingStyle, direction: Enum.EasingDirection },
+    easeOptions: { style: Enum.EasingStyle?, direction: Enum.EasingDirection? }?,
     A: sourceType,
     B: sourceType, 
     schedule: number
@@ -112,7 +112,7 @@ local tweenV = require(script.library)
 
 tweenV:Create(
     instance: Instance,
-    easeOption: {style: Enum.EasingStyle?, direction: Enum.EasingDirection?, duration: number?}?,
+    easeOption: { style: Enum.EasingStyle?, direction: Enum.EasingDirection?, duration: number? }?,
     target: table
 ): table
 ```
