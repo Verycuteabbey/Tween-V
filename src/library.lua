@@ -18,7 +18,7 @@ local freeze = table.freeze
 
 type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce"
 type easeDirection = "In" | "Out" | "InOut"
-type positionType =
+type sourceType =
 	CFrame
 	| Color3
 	| ColorSequenceKeypoint
@@ -310,7 +310,7 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 	return map[variant]()
 end
 
-local function __getLerp(variant: string, A: positionType, B: positionType, alpha: number): positionType
+local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: number): sourceType
 	--#region // Color3
 	local function color3(): Color3
 		local A, B = A :: Color3, B :: Color3
@@ -468,44 +468,44 @@ local function __getLerp(variant: string, A: positionType, B: positionType, alph
 		["Region3"] = region3,
 		["UDim2"] = udim2,
 		["Vector2"] = vector2,
-		["Vector3"] = vector3,
+		["Vector3"] = vector3
 	}
 
 	return map[variant]()
 end
 
 function library:Lerp(
-	easeOption: { style: easeStyle?, direction: easeDirection? }?,
-	A: positionType,
-	B: positionType,
+	easeOptions: { style: easeStyle?, direction: easeDirection? }?,
+	A: sourceType,
+	B: sourceType,
 	schedule: number
-): positionType
+): sourceType
 	--#region // default
-	if not easeOption then
-		warn("Tween-V - Warning // A empty easeOption has been given, using default")
+	if not easeOptions then
+		warn("Tween-V - Warning // A empty easeOptions has been given, using default")
 
-		easeOption = {
+		easeOptions = {
 			style = "Linear",
 			direction = "In",
 		}
-	elseif not easeOption.style then
-		warn("Tween-V - Warning // easeOption has given a empty style, using default")
+	elseif not easeOptions.style then
+		warn("Tween-V - Warning // easeOptions has given a empty style, using default")
 
-		easeOption.style = "Linear"
-	elseif not easeOption.direction then
-		warn("Tween-V - Warning // easeOption has given a empty direction, using default")
+		easeOptions.style = "Linear"
+	elseif not easeOptions.direction then
+		warn("Tween-V - Warning // easeOptions has given a empty direction, using default")
 
-		easeOption.direction = "In"
+		easeOptions.direction = "In"
 	end
 	--#endregion
-	local alpha = __getAlpha(easeOption.style, easeOption.direction, schedule)
+	local alpha = __getAlpha(easeOptions.style, easeOptions.direction, schedule)
 
 	local typeA, typeB = typeof(A), typeof(B)
 
 	if typeA == typeB then
-		local positionType = typeA :: string or typeB :: string
+		local sourceType = typeA :: string or typeB :: string
 
-		return __getLerp(positionType, A, B, alpha)
+		return __getLerp(sourceType, A, B, alpha)
 	end
 
 	error("Tween-V - Error // Only same types of position can lerp!")

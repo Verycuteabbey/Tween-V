@@ -16,7 +16,7 @@ local freeze = table.freeze
 
 type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce"
 type easeDirection = "In" | "Out" | "InOut"
-type positionType =
+type sourceType =
 	CFrame
 	| Color3
 	| ColorSequenceKeypoint
@@ -40,30 +40,30 @@ local controller = {}
 function controller:Create(
 	instance: Instance,
 	property: string,
-	easeOption: { style: easeStyle?, direction: easeDirection?, duration: number? }?,
-	target: positionType
+	easeOptions: { style: easeStyle?, direction: easeDirection?, duration: number? }?,
+	target: sourceType
 ): table
 	--#region // default
-	if not easeOption then
+	if not easeOptions then
 		warn("Tween-V - Warning // empty easeOptions has been given, using default")
 
-		easeOption = {
+		easeOptions = {
 			style = "Linear",
 			direction = "In",
 			duration = 1,
 		}
-	elseif not easeOption.style then
+	elseif not easeOptions.style then
 		warn("Tween-V - Warning // easeOptions has given a empty style, using default")
 
-		easeOption.style = "Linear"
-	elseif not easeOption.direction then
+		easeOptions.style = "Linear"
+	elseif not easeOptions.direction then
 		warn("Tween-V - Warning // easeOptions has given a empty direction, using default")
 
-		easeOption.direction = "In"
-	elseif not easeOption.duration then
+		easeOptions.direction = "In"
+	elseif not easeOptions.duration then
 		warn("Tween-V - Warning // easeOptions has given a empty duration, using default")
 
-		easeOption.duration = 1
+		easeOptions.duration = 1
 	end
 	--#endregion
 	local object = {}
@@ -76,7 +76,7 @@ function controller:Create(
 		property = property,
 		target = target,
 		value = instance[property],
-		easeOption = easeOption,
+		easeOptions = easeOptions,
 	}
 	object.status = {
 		running = false,
@@ -118,7 +118,7 @@ function controller:Create(
 
 		status.started = true
 
-		local easeOption = info.easeOption :: table
+		local easeOptions = info.easeOptions :: table
 		local nowTime = 0
 
 		local function tween(deltaTime: number)
@@ -128,14 +128,14 @@ function controller:Create(
 
 			status.running = true
 
-			if nowTime > easeOption.duration then
+			if nowTime > easeOptions.duration then
 				status.running = false
 				self.thread:Disconnect()
-				nowTime = easeOption.duration :: number
+				nowTime = easeOptions.duration :: number
 			end
 
 			info.instance[info.property] =
-				library:Lerp(easeOption, info.value, info.target, nowTime / easeOption.duration)
+				library:Lerp(easeOptions, info.value, info.target, nowTime / easeOptions.duration)
 			nowTime += deltaTime
 		end
 
