@@ -44,7 +44,7 @@ type sourceType =
 local library = {}
 
 --// functions
-local function __getAlpha(style: Enum.EasingStyle, direction: Enum.EasingDirection, schedule: number)
+local function __getAlpha(style: Enum.EasingStyle | string, direction: Enum.EasingDirection | string, schedule: number)
 	--#region // Linear
 	local function __linear()
 		return schedule
@@ -247,23 +247,23 @@ local function __getAlpha(style: Enum.EasingStyle, direction: Enum.EasingDirecti
 	end
 	--#endregion
 	--#region // Bounce
-	local function __bounceOut(bSchedule: number)
+	local function __bounceOut(_schedule: number)
 		local A, B = 7.5625, 2.75
 
-		if bSchedule < 1 / B then
-			return A * bSchedule * bSchedule
-		elseif bSchedule < 2 / B then
-			bSchedule -= 1.5 / B
+		if _schedule < 1 / B then
+			return A * _schedule * _schedule
+		elseif _schedule < 2 / B then
+			_schedule -= 1.5 / B
 
-			return A * bSchedule * bSchedule + 0.75
-		elseif bSchedule < 2.5 / B then
-			bSchedule -= 2.25 / B
+			return A * _schedule * _schedule + 0.75
+		elseif _schedule < 2.5 / B then
+			_schedule -= 2.25 / B
 
-			return A * bSchedule * bSchedule + 0.9375
+			return A * _schedule * _schedule + 0.9375
 		else
-			bSchedule -= 2.625 / B
+			_schedule -= 2.625 / B
 
-			return A * bSchedule * bSchedule + 0.984375
+			return A * _schedule * _schedule + 0.984375
 		end
 	end
 
@@ -296,7 +296,7 @@ local function __getAlpha(style: Enum.EasingStyle, direction: Enum.EasingDirecti
 		["QuintOut"] = __quintOut,
 		["QuintInOut"] = __quintInOut,
 		["SineIn"] = __sineIn,
- 		["SineOut"] = __sineOut,
+		["SineOut"] = __sineOut,
 		["SineInOut"] = __sineInOut,
 		["ExponentialIn"] = __expoIn,
 		["ExponentialOut"] = __expoOut,
@@ -315,12 +315,20 @@ local function __getAlpha(style: Enum.EasingStyle, direction: Enum.EasingDirecti
 		["BounceInOut"] = __bounceInOut
 	}
 
-	style, direction = tostring(style), tostring(direction)
+	local variant: string
+	local _type = typeof(style) or typeof(direction)
 
-	local variant1, variant2 = match(style, "^Enum.EasingStyle%.([^-]+)$"), match(direction, "^Enum.EasingDirection%.([^-]+)$")
-	local final = format("%s%s", variant1, variant2)
+	if _type == "Enum" then
+		style, direction = tostring(style), tostring(direction)
 
-	return map[final](schedule)
+		local variant1, variant2 =
+			match(style, "^Enum.EasingStyle%.([^-]+)$"), match(direction, "^Enum.EasingDirection%.([^-]+)$")
+		variant = format("%s%s", variant1, variant2)
+	elseif _type == "string" then
+		variant = format("%s%s", style, direction)
+	end
+
+	return map[variant](schedule)
 end
 
 local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: number): sourceType
@@ -488,7 +496,7 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 end
 
 function library:Lerp(
-	easeOptions: { style: Enum.EasingStyle?, direction: Enum.EasingDirection? }?,
+	easeOptions: { style: Enum.EasingStyle | string?, direction: Enum.EasingDirection | string? }?,
 	A: sourceType,
 	B: sourceType,
 	schedule: number
@@ -496,23 +504,24 @@ function library:Lerp(
 	--#region // default
 	if not easeOptions then
 		easeOptions = {
-			style = Enum.EasingStyle.Linear,
-			direction = Enum.EasingDirection.InOut,
+			[1] = Enum.EasingStyle.Linear,
+			[2] = Enum.EasingDirection.InOut,
 		}
-	elseif not easeOptions.style then
-		easeOptions.style = Enum.EasingStyle.Linear
-	elseif not easeOptions.direction then
-		easeOptions.direction = Enum.EasingDirection.InOut
+	elseif not easeOptions[1] then
+		easeOptions[1] = Enum.EasingStyle.Linear
+	elseif not easeOptions[2] then
+		easeOptions[2] = Enum.EasingDirection.InOut
 	end
 	--#endregion
-	local alpha = __getAlpha(easeOptions.style, easeOptions.direction, schedule)
+	local style, direction = easeOptions[1], easeOptions[2]
+	local alpha = __getAlpha(style, direction, schedule)
 
 	local typeA, typeB = typeof(A), typeof(B)
-	local positionType = typeA or typeB
+	local _type = typeA or typeB
 
 	if typeA ~= typeB then return end
 
-	return __getLerp(positionType, A, B, alpha)
+	return __getLerp(_type, A, B, alpha)
 end
 
 return library
