@@ -32,7 +32,7 @@
 local library = require(path.to.library) -- 记得换成自己存放的路径
 
 library:Lerp(
-    easeOptions: { style: Enum.EasingStyle?, direction: Enum.EasingDirection? }?,
+    easeOptions: { style: Enum.EasingStyle | string?, direction: Enum.EasingDirection | string? }?,
     A: sourceType,
     B: sourceType, 
     schedule: number
@@ -76,17 +76,30 @@ type positionType =
 
 > ⚠ Library 不允许出现异类型计算，不要想着 CFrame 与 Vector3 两个之间奇奇怪怪的计算！ ⚠
 
+以 `Enum` 为传参类型：
+
 ```lua
 local library = require(path.to.library) -- 记得换成自己存放的路径
 
 local result = library:Lerp(
-    { style = Enum.EasingStyle.Quad, direction = Enum.EasingDirection.Out },
+    { Enum.EasingStyle.Quad, Enum.EasingDirection.Out },
     Vector3.new(0, 0, 0),
     Vector3.new(10, 10, 10),
     0.5
 )
 
 print(result)
+```
+
+以 `string` 为传参类型:
+
+```lua
+local result = library:Lerp(
+    { "Quad", "Out" },
+    Vector3.new(0, 0, 0),
+    Vector3.new(10, 10, 10),
+    0.5
+)
 ```
 
 输出 `result` 将会得到 Vector3 `(7.5, 7.5, 7.5)` 返回值
@@ -112,7 +125,7 @@ local tweenV = require(script.library)
 
 tweenV:Create(
     instance: Instance,
-    easeOption: { style: Enum.EasingStyle?, direction: Enum.EasingDirection?, duration: number? }?,
+    easeOption: { style: Enum.EasingStyle | string?, direction: Enum.EasingDirection | string?, duration: number? }?,
     target: table
 ): table
 ```
