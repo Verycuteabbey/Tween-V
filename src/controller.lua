@@ -38,23 +38,22 @@ function controller:Create(
 	easeOptions: {
 		style: Enum.EasingStyle | string?,
 		direction: Enum.EasingDirection | string?,
-		duration: number?
+		duration: number?,
+		extra: { amplitude: number?, period: number? }?
 	}?,
 	target: table
 ): table
 	--#region // default
 	if not easeOptions then
-		easeOptions = {
-			[1] = Enum.EasingStyle.Linear,
-			[2] = Enum.EasingDirection.InOut,
-			[3] = 1
-		}
+		easeOptions = { Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 1, { amplitude = 1, period = 0.3 }}
 	elseif not easeOptions[1] then
 		easeOptions[1] = Enum.EasingStyle.Linear
 	elseif not easeOptions[2] then
 		easeOptions[2] = Enum.EasingDirection.InOut
 	elseif not easeOptions[3] then
 		easeOptions[3] = 1
+	elseif not easeOptions[4] then
+		easeOptions[4] = { amplitude = 1, period = 0.3 }
 	end
 	--#endregion
 	local object = {}

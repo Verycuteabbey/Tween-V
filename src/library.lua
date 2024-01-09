@@ -12,7 +12,7 @@
 --
 
 --// defines
-local cos, pi, pow, sin, sqrt = math.cos, math.pi, math.pow, math.sin, math.sqrt
+local asin, cos, pi, pow, sin, sqrt = math.asin, math.cos, math.pi, math.pow, math.sin, math.sqrt
 local format = string.format
 local fromUnixTimestampMillis = DateTime.fromUnixTimestampMillis
 local newColor3 = Color3.new
@@ -44,291 +44,99 @@ type sourceType =
 local library = {}
 
 --// functions
-local function __getAlpha(style: Enum.EasingStyle | string, direction: Enum.EasingDirection | string, schedule: number)
-	--#region // Linear
-	local function __linear()
-		return schedule
+local function __getAlpha(style: Enum.EasingStyle | string, direction: Enum.EasingDirection | string, schedule: number, ...)
+	--#region // style
+	local function __linear(_schedule: number) return _schedule end
+	local function __quad(_schedule: number) return _schedule * _schedule end
+	local function __cubic(_schedule: number) return _schedule * _schedule * _schedule end
+	local function __quart(_schedule: number) return _schedule * _schedule * _schedule * _schedule end
+	local function __quint(_schedule: number) return _schedule * _schedule * _schedule * _schedule * _schedule end
+	local function __sine(_schedule: number) return -cos(_schedule * (pi * 0.5)) + 1 end
+	local function __expo(_schedule: number) return 2 ^ (10 * (_schedule - 1)) end
+	local function __circ(_schedule: number) return -(sqrt(1 - _schedule * _schedule) - 1) end
+	local function __elastic(_schedule: number, amplitude: number, period: number)
+		if _schedule == 0 then return 0 end
+		if _schedule == 1 then return 1 end
+
+		local A: number
+
+		period = period or 0.3
+
+		if not amplitude or amplitude < 1 then
+			amplitude = 1
+			A = period / 4
+		else
+			A = period / (2 * pi) * asin(1 / amplitude)
+		end
+
+		_schedule -= 1
+
+		return -(amplitude * 2 ^ (10 * _schedule) * sin((_schedule - A) * (2 * pi) / period))
+	end
+	local function __back(_schedule: number) return _schedule * _schedule * (2.7 * _schedule - 1.7) end
+	local function __bounce(_schedule: number)
+		if _schedule < 1 / 2.75 then
+			return 7.5625 * _schedule * _schedule
+		elseif _schedule < 2 / 2.75 then
+			_schedule -= 1.5 / 2.75
+
+			return 7.5625 * _schedule * _schedule + 0.75
+		elseif _schedule < 2.5 / 2.75 then
+			_schedule -= 2.25 / 2.75
+
+			return 7.5625 * _schedule * _schedule + 0.9375
+		else
+			_schedule -= 2.625 / 2.75
+
+			return 7.5625 * _schedule * _schedule + 0.984375
+		end
 	end
 	--#endregion
-	--#region // Quad
-	local function __quadIn()
-		return schedule * schedule
-	end
-
-	local function __quadOut()
-		return 1 - (1 - schedule) * (1 - schedule)
-	end
-
-	local function __quadInOut()
+	--#region // direction
+	local function __in(func, ...) return func(schedule, ...) end
+	local function __out(func, ...) return 1 - func(1 - schedule, ...) end
+	local function __inOut(func, ...)
 		if schedule < 0.5 then
-			return 2 * schedule * schedule
+			return 0.5 * func(schedule * 2, ...)
 		else
-			return 1 - pow(-2 * schedule + 2, 2) / 2
+			schedule = 1 - schedule
+
+			return 0.5 * (1 - func(schedule * 2, ...)) + 0.5
 		end
 	end
-	--#endregion
-	--#region // Cubic
-	local function __cubicIn()
-		return schedule * schedule * schedule
-	end
-
-	local function __cubicOut()
-		return 1 - pow(1 - schedule, 3)
-	end
-
-	local function __cubicInOut()
+	local function __outIn(func, ...)
 		if schedule < 0.5 then
-			return 4 * schedule * schedule * schedule
+			return 0.5 * (1 - func(1 - schedule * 2, ...))
 		else
-			return 1 - pow(-2 * schedule + 2, 3) / 2
-		end
-	end
-	--#endregion
-	--#region // Quart
-	local function __quartIn()
-		return schedule * schedule * schedule * schedule
-	end
+			schedule = 1 - schedule
 
-	local function __quartOut()
-		return 1 - pow(1 - schedule, 4)
-	end
-
-	local function __quartInOut()
-		if schedule < 0.5 then
-			return 8 * schedule * schedule * schedule * schedule
-		else
-			return 1 - pow(-2 * schedule + 2, 4) / 2
-		end
-	end
-	--#endregion
-	--#region // Quint
-	local function __quintIn()
-		return schedule * schedule * schedule * schedule * schedule
-	end
-
-	local function __quintOut()
-		return 1 - pow(1 - schedule, 5)
-	end
-
-	local function __quintInOut()
-		if schedule < 0.5 then
-			return 16 * schedule * schedule * schedule * schedule * schedule
-		else
-			return 1 - pow(-2 * schedule + 2, 5) / 2
-		end
-	end
-	--#endregion
-	--#region // Sine
-	local function __sineIn()
-		return 1 - cos((schedule * pi) / 2)
-	end
-
-	local function __sineOut()
-		return sin((schedule * pi) / 2)
-	end
-
-	local function __sineInOut()
-		return -(cos(schedule * pi) - 1) / 2
-	end
-	--#endregion
-	--#region // Expo
-	local function __expoIn()
-		if schedule == 0 then
-			return 0
-		else
-			return pow(2, 10 * schedule - 10)
-		end
-	end
-
-	local function __expoOut()
-		if schedule == 1 then
-			return 1
-		else
-			return 1 - pow(2, -10 * schedule)
-		end
-	end
-
-	local function __expoInOut()
-		if schedule == 0 then
-			return 0
-		elseif schedule == 1 then
-			return 1
-		end
-
-		if schedule < 0.5 then
-			return pow(2, 20 * schedule - 10) / 2
-		else
-			return (2 - pow(2, -20 * schedule + 10)) / 2
-		end
-	end
-	--#endregion
-	--#region // Circ
-	local function __circIn()
-		return 1 - sqrt(1 - pow(schedule, 2))
-	end
-
-	local function __circOut()
-		return sqrt(1 - pow(schedule - 1, 2))
-	end
-
-	local function __circInOut()
-		if schedule < 0.5 then
-			return (1 - sqrt(1 - pow(2 * schedule, 2))) / 2
-		else
-			return (sqrt(1 - pow(-2 * schedule, 2)) + 1) / 2
-		end
-	end
-	--#endregion
-	--#region // Elastic
-	local function __elasticIn()
-		local A = (2 * pi) / 3
-
-		if schedule == 0 then
-			return 0
-		elseif schedule == 1 then
-			return 1
-		else
-			return pow(2, 10 * schedule - 10) * sin((schedule * 10 - 10.75) * A)
-		end
-	end
-
-	local function __elasticOut()
-		local A = (2 * pi) / 3
-
-		if schedule == 0 then
-			return 0
-		elseif schedule == 1 then
-			return 1
-		else
-			return pow(2, -10 * schedule) * sin((schedule * 10 - 0.75) * A) + 1
-		end
-	end
-
-	local function __elasticInOut()
-		local A = (2 * pi) / 4.5
-
-		if schedule == 0 then
-			return 0
-		elseif schedule == 1 then
-			return 1
-		end
-
-		if schedule < 0.5 then
-			return -(pow(2, 20 * schedule - 10) * sin((20 * schedule - 11.125) * A)) / 2
-		else
-			return (pow(2, -20 * schedule + 10) * sin((20 * schedule - 11.125) * A)) / 2 + 1
-		end
-	end
-	--#endregion
-	--#region // Back
-	local function __backIn()
-		local A = 1.70158
-		local B = A + 1
-
-		return B * schedule * schedule * schedule - A * schedule * schedule
-	end
-
-	local function __backOut()
-		local A = 1.70158
-		local B = A + 1
-
-		return 1 + B * pow(schedule - 1, 3) + A * pow(schedule - 1, 2)
-	end
-
-	local function __backInOut()
-		local A = 1.70158
-		local B = A * 1.525
-
-		if schedule < 0.5 then
-			return (pow(2 * schedule, 2) * ((B + 1) * 2 * schedule - B)) / 2
-		else
-			return (pow(2 * schedule - 2, 2) * ((B + 1) * (2 * schedule - 2) + B) + 2) / 2
-		end
-	end
-	--#endregion
-	--#region // Bounce
-	local function __bounceOut(_schedule: number)
-		local A, B = 7.5625, 2.75
-
-		if _schedule < 1 / B then
-			return A * _schedule * _schedule
-		elseif _schedule < 2 / B then
-			_schedule -= 1.5 / B
-
-			return A * _schedule * _schedule + 0.75
-		elseif _schedule < 2.5 / B then
-			_schedule -= 2.25 / B
-
-			return A * _schedule * _schedule + 0.9375
-		else
-			_schedule -= 2.625 / B
-
-			return A * _schedule * _schedule + 0.984375
-		end
-	end
-
-	local function __bounceIn()
-		return 1 - __bounceOut(1 - schedule)
-	end
-
-	local function __bounceInOut()
-		if schedule < 0.5 then
-			return (1 - __bounceOut(1 - 2 * schedule)) / 2
-		else
-			return (1 + __bounceOut(1 - 2 * schedule)) / 2
+			return 0.5 * (1 - (1 - func(1 - schedule * 2, ...))) + 0.5
 		end
 	end
 	--#endregion
 	local map = {
-		["LinearIn"] = __linear,
-		["LinearOut"] = __linear,
-		["LinearInOut"] = __linear,
-		["QuadIn"] = __quadIn,
-		["QuadOut"] = __quadOut,
-		["QuadInOut"] = __quadInOut,
-		["CubicIn"] = __cubicIn,
-		["CubicOut"] = __cubicOut,
-		["CubicInOut"] = __cubicInOut,
-		["QuartIn"] = __quartIn,
-		["QuartOut"] = __quartOut,
-		["QuartInOut"] = __quartInOut,
-		["QuintIn"] = __quintIn,
-		["QuintOut"] = __quintOut,
-		["QuintInOut"] = __quintInOut,
-		["SineIn"] = __sineIn,
-		["SineOut"] = __sineOut,
-		["SineInOut"] = __sineInOut,
-		["ExponentialIn"] = __expoIn,
-		["ExponentialOut"] = __expoOut,
-		["ExponentialInOut"] = __expoInOut,
-		["CircularIn"] = __circIn,
-		["CircularOut"] = __circOut,
-		["CircularInOut"] = __circInOut,
-		["ElasticIn"] = __elasticIn,
-		["ElasticOut"] = __elasticOut,
-		["ElasticInOut"] = __elasticInOut,
-		["BackIn"] = __backIn,
-		["BackOut"] = __backOut,
-		["BackInOut"] = __backInOut,
-		["BounceIn"] = __bounceIn,
-		["BounceOut"] = __bounceOut,
-		["BounceInOut"] = __bounceInOut
+		["Linear"] = __linear,
+		["Quad"] = __quad,
+		["Cubic"] = __cubic,
+		["Quart"] = __quart,
+		["Quint"] = __quint,
+		["Sine"] = __sine,
+		["Exponential"] = __expo,
+		["Circular"] = __circ,
+		["Elastic"] = __elastic,
+		["Back"] = __back,
+		["Bounce"] = __bounce,
+
+		["In"] = __in,
+		["Out"] = __out,
+		["InOut"] = __inOut,
+		["OutIn"] = __outIn
 	}
 
-	local variant: string
-	local _type = typeof(style) or typeof(direction)
+	local variant1 = if typeof(style) == "Enum" then match(style, "^Enum.EasingStyle%.([^-]+)$") else style
+	local variant2 = if typeof(direction) == "Enum" then match(direction, "^Enum.EasingDirection%.([^-]+)$") else direction
 
-	if _type == "Enum" then
-		style, direction = tostring(style), tostring(direction)
-
-		local variant1, variant2 =
-			match(style, "^Enum.EasingStyle%.([^-]+)$"), match(direction, "^Enum.EasingDirection%.([^-]+)$")
-		variant = format("%s%s", variant1, variant2)
-	elseif _type == "string" then
-		variant = format("%s%s", style, direction)
-	end
-
-	return map[variant](schedule)
+	return map[variant2](map[variant1], ...)
 end
 
 local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: number): sourceType
@@ -496,32 +304,34 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 end
 
 function library:Lerp(
-	easeOptions: { style: Enum.EasingStyle | string?, direction: Enum.EasingDirection | string? }?,
+	easeOptions: {
+		style: Enum.EasingStyle | string?,
+		direction: Enum.EasingDirection | string?,
+		extra: { amplitude: number?, period: number? }?
+	}?,
 	A: sourceType,
 	B: sourceType,
 	schedule: number
 ): sourceType | nil
 	--#region // default
 	if not easeOptions then
-		easeOptions = {
-			[1] = Enum.EasingStyle.Linear,
-			[2] = Enum.EasingDirection.InOut,
-		}
+		easeOptions = { Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, { amplitude = 1, period = 0.3 } }
 	elseif not easeOptions[1] then
 		easeOptions[1] = Enum.EasingStyle.Linear
 	elseif not easeOptions[2] then
 		easeOptions[2] = Enum.EasingDirection.InOut
+	elseif not easeOptions[3] then
+		easeOptions[3] = { amplitude = 1, period = 0.3 }
 	end
 	--#endregion
-	local style, direction = easeOptions[1], easeOptions[2]
-	local alpha = __getAlpha(style, direction, schedule)
+	local style, direction, extra = easeOptions[1], easeOptions[2], easeOptions[3]
+	local alpha = __getAlpha(style, direction, schedule, extra.amplitude, extra.period)
 
 	local typeA, typeB = typeof(A), typeof(B)
-	local _type = typeA or typeB
 
 	if typeA ~= typeB then return end
 
-	return __getLerp(_type, A, B, alpha)
+	return __getLerp(typeA or typeB, A, B, alpha)
 end
 
 return library
