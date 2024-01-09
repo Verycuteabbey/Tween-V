@@ -35,27 +35,30 @@ local controller = {}
 --// functions
 function controller:Create(
 	instance: Instance,
-	easeOptions: { style: Enum.EasingStyle?, direction: Enum.EasingDirection?, duration: number? }?,
+	easeOptions: {
+		style: Enum.EasingStyle | string?,
+		direction: Enum.EasingDirection | string?,
+		duration: number?
+	}?,
 	target: table
 ): table
 	--#region // default
 	if not easeOptions then
 		easeOptions = {
-			style = Enum.EasingStyle.Linear,
-			direction = Enum.EasingDirection.InOut,
-			duration = 1,
+			[1] = Enum.EasingStyle.Linear,
+			[2] = Enum.EasingDirection.InOut,
+			[3] = 1
 		}
-	elseif not easeOptions.style then
-		easeOptions.style = Enum.EasingStyle.Linear
-	elseif not easeOptions.direction then
-		easeOptions.direction = Enum.EasingDirection.InOut
-	elseif not easeOptions.duration then
-		easeOptions.duration = 1
+	elseif not easeOptions[1] then
+		easeOptions[1] = Enum.EasingStyle.Linear
+	elseif not easeOptions[2] then
+		easeOptions[2] = Enum.EasingDirection.InOut
+	elseif not easeOptions[3] then
+		easeOptions[3] = 1
 	end
 	--#endregion
 	local object = {}
 
-	object.func = nil
 	object.threads = {}
 
 	object.info = {
@@ -70,11 +73,40 @@ function controller:Create(
 	}
 	--#region // Replay
 	function object:Replay()
+		--#region // check
 		local status = self.status
 
 		if not status.started then return end
 
-		local __tween = self.func
+		status.yield = false
+
+		self.status = status
+		--#endregion
+		local info = self.info
+		local properties = info.properties
+		local threads = self.threads
+
+		easeOptions = info.easeOptions
+		local duration = easeOptions[3]
+
+		local nowTime = 0
+
+		local function __tween(deltaTime: number, property: string)
+			nowTime = nowTime
+			status = self.status
+
+			if status.yield then return end
+
+			if nowTime > duration then
+				threads[property]:Disconnect()
+				nowTime = duration
+			end
+
+			local variant = library:Lerp(easeOptions, properties[property], target[property], nowTime / duration)
+			instance[property] = variant
+
+			nowTime += deltaTime
+		end
 
 		for K, _ in pairs(target) do
 			local function __main(deltaTime: number)
@@ -90,65 +122,60 @@ function controller:Create(
 	--#region // Resume
 	function object:Resume()
 		local status = self.status
+		local started = status.started
 
-		if not status.started then return end
+		if not started then return end
 
-		status.yield = false
-
-		self.status = status
+		self.status.yield = false
 	end
 	--#endregion
 	--#region // Start
 	function object:Start()
 		--#region // check
 		local status = self.status
+		local started = status.started
 
-		if status.started then return end
+		if started then return end
 
-		status.started = true
-		self.status = status
+		self.status.started = true
 		--#endregion
-		local info = self.info
 		--#region // convert
 		local temp = {}
 
 		for K, V in pairs(target) do
 			K = tostring(K)
 
-			info.properties[K] = info.instance[K]
+			self.info.properties[K] = self.info.instance[K]
 			temp[K] = V
 		end
 
 		target = temp
-		self.info = info
 		--#endregion
+		local info = self.info
+
 		easeOptions = info.easeOptions
-		info = self.info
+		local duration = easeOptions[3]
+		local properties = info.properties
 
 		local nowTime = 0
 
 		local function __tween(deltaTime: number, property: string)
+			nowTime = nowTime
 			status = self.status
 
 			if status.yield then return end
 
-			if nowTime > easeOptions.duration then
+			if nowTime > duration then
 				self.threads[property]:Disconnect()
-				nowTime = easeOptions.duration
+				nowTime = duration
 			end
 
-			local variant = library:Lerp(
-				easeOptions,
-				info.properties[property],
-				target[property],
-				nowTime / easeOptions.duration
-			)
+			local variant =
+				library:Lerp(easeOptions, properties[property], target[property], nowTime / easeOptions.duration)
 			instance[property] = variant
 
 			nowTime += deltaTime
 		end
-
-		self.func = __tween
 
 		for K, _ in pairs(target) do
 			local function __main(deltaTime: number)
