@@ -13,6 +13,7 @@
 
 --// defines
 local cos, pi, pow, sin, sqrt = math.cos, math.pi, math.pow, math.sin, math.sqrt
+local format = string.format
 local fromUnixTimestampMillis = DateTime.fromUnixTimestampMillis
 local newColor3 = Color3.new
 local newColorSequenceKeypoint = ColorSequenceKeypoint.new
@@ -23,6 +24,7 @@ local newRect = Rect.new
 local newRegion3 = Region3.new
 local newVector2 = Vector2.new
 local newVector3 = Vector3.new
+local match = string.match
 
 type sourceType =
 	CFrame
@@ -49,328 +51,281 @@ local function __getAlpha(style: Enum.EasingStyle, direction: Enum.EasingDirecti
 	end
 	--#endregion
 	--#region // Quad
-	local function __quad()
-		local function __in()
-			return schedule * schedule
-		end
-		local function __out()
-			return 1 - (1 - schedule) * (1 - schedule)
-		end
-		local function __inOut()
-			if schedule < 0.5 then
-				return 2 * schedule * schedule
-			else
-				return 1 - pow(-2 * schedule + 2, 2) / 2
-			end
-		end
+	local function __quadIn()
+		return schedule * schedule
+	end
 
-		local map = {
-			[Enum.EasingDirection.In] = __in,
-			[Enum.EasingDirection.Out] = __out,
-			[Enum.EasingDirection.InOut] = __inOut,
-		}
+	local function __quadOut()
+		return 1 - (1 - schedule) * (1 - schedule)
+	end
 
-		return map[direction]()
+	local function __quadInOut()
+		if schedule < 0.5 then
+			return 2 * schedule * schedule
+		else
+			return 1 - pow(-2 * schedule + 2, 2) / 2
+		end
 	end
 	--#endregion
 	--#region // Cubic
-	local function __cubic()
-		local function __in()
-			return schedule * schedule * schedule
-		end
-		local function __out()
-			return 1 - pow(1 - schedule, 3)
-		end
-		local function __inOut()
-			if schedule < 0.5 then
-				return 4 * schedule * schedule * schedule
-			else
-				return 1 - pow(-2 * schedule + 2, 3) / 2
-			end
-		end
+	local function __cubicIn()
+		return schedule * schedule * schedule
+	end
 
-		local map = {
-			[Enum.EasingDirection.In] = __in,
-			[Enum.EasingDirection.Out] = __out,
-			[Enum.EasingDirection.InOut] = __inOut,
-		}
+	local function __cubicOut()
+		return 1 - pow(1 - schedule, 3)
+	end
 
-		return map[direction]()
+	local function __cubicInOut()
+		if schedule < 0.5 then
+			return 4 * schedule * schedule * schedule
+		else
+			return 1 - pow(-2 * schedule + 2, 3) / 2
+		end
 	end
 	--#endregion
 	--#region // Quart
-	local function __quart()
-		local function __in()
-			return schedule * schedule * schedule * schedule
-		end
-		local function __out()
-			return 1 - pow(1 - schedule, 4)
-		end
-		local function __inOut()
-			if schedule < 0.5 then
-				return 8 * schedule * schedule * schedule * schedule
-			else
-				return 1 - pow(-2 * schedule + 2, 4) / 2
-			end
-		end
+	local function __quartIn()
+		return schedule * schedule * schedule * schedule
+	end
 
-		local map = {
-			[Enum.EasingDirection.In] = __in,
-			[Enum.EasingDirection.Out] = __out,
-			[Enum.EasingDirection.InOut] = __inOut,
-		}
+	local function __quartOut()
+		return 1 - pow(1 - schedule, 4)
+	end
 
-		return map[direction]()
+	local function __quartInOut()
+		if schedule < 0.5 then
+			return 8 * schedule * schedule * schedule * schedule
+		else
+			return 1 - pow(-2 * schedule + 2, 4) / 2
+		end
 	end
 	--#endregion
 	--#region // Quint
-	local function __quint()
-		local function __in()
-			return schedule * schedule * schedule * schedule * schedule
-		end
-		local function __out()
-			return 1 - pow(1 - schedule, 5)
-		end
-		local function __inOut()
-			if schedule < 0.5 then
-				return 16 * schedule * schedule * schedule * schedule * schedule
-			else
-				return 1 - pow(-2 * schedule + 2, 5) / 2
-			end
-		end
+	local function __quintIn()
+		return schedule * schedule * schedule * schedule * schedule
+	end
 
-		local map = {
-			[Enum.EasingDirection.In] = __in,
-			[Enum.EasingDirection.Out] = __out,
-			[Enum.EasingDirection.InOut] = __inOut,
-		}
+	local function __quintOut()
+		return 1 - pow(1 - schedule, 5)
+	end
 
-		return map[direction]()
+	local function __quintInOut()
+		if schedule < 0.5 then
+			return 16 * schedule * schedule * schedule * schedule * schedule
+		else
+			return 1 - pow(-2 * schedule + 2, 5) / 2
+		end
 	end
 	--#endregion
 	--#region // Sine
-	local function __sine()
-		local function __in()
-			return 1 - cos((schedule * pi) / 2)
-		end
-		local function __out()
-			return sin((schedule * pi) / 2)
-		end
-		local function __inOut()
-			return -(cos(schedule * pi) - 1) / 2
-		end
+	local function __sineIn()
+		return 1 - cos((schedule * pi) / 2)
+	end
 
-		local map = {
-			[Enum.EasingDirection.In] = __in,
-			[Enum.EasingDirection.Out] = __out,
-			[Enum.EasingDirection.InOut] = __inOut,
-		}
+	local function __sineOut()
+		return sin((schedule * pi) / 2)
+	end
 
-		return map[direction]()
+	local function __sineInOut()
+		return -(cos(schedule * pi) - 1) / 2
 	end
 	--#endregion
 	--#region // Expo
-	local function __expo()
-		local function __in()
-			if schedule == 0 then
-				return 0
-			else
-				return pow(2, 10 * schedule - 10)
-			end
+	local function __expoIn()
+		if schedule == 0 then
+			return 0
+		else
+			return pow(2, 10 * schedule - 10)
 		end
-		local function __out()
-			if schedule == 1 then
-				return 1
-			else
-				return 1 - pow(2, -10 * schedule)
-			end
-		end
-		local function __inOut()
-			if schedule == 0 then
-				return 0
-			elseif schedule == 1 then
-				return 1
-			end
+	end
 
-			if schedule < 0.5 then
-				return pow(2, 20 * schedule - 10) / 2
-			else
-				return (2 - pow(2, -20 * schedule + 10)) / 2
-			end
+	local function __expoOut()
+		if schedule == 1 then
+			return 1
+		else
+			return 1 - pow(2, -10 * schedule)
+		end
+	end
+
+	local function __expoInOut()
+		if schedule == 0 then
+			return 0
+		elseif schedule == 1 then
+			return 1
 		end
 
-		local map = {
-			[Enum.EasingDirection.In] = __in,
-			[Enum.EasingDirection.Out] = __out,
-			[Enum.EasingDirection.InOut] = __inOut,
-		}
-
-		return map[direction]()
+		if schedule < 0.5 then
+			return pow(2, 20 * schedule - 10) / 2
+		else
+			return (2 - pow(2, -20 * schedule + 10)) / 2
+		end
 	end
 	--#endregion
 	--#region // Circ
-	local function __circ()
-		local function __in()
-			return 1 - sqrt(1 - pow(schedule, 2))
-		end
-		local function __out()
-			return sqrt(1 - pow(schedule - 1, 2))
-		end
-		local function __inOut()
-			if schedule < 0.5 then
-				return (1 - sqrt(1 - pow(2 * schedule, 2))) / 2
-			else
-				return (sqrt(1 - pow(-2 * schedule, 2)) + 1) / 2
-			end
-		end
+	local function __circIn()
+		return 1 - sqrt(1 - pow(schedule, 2))
+	end
 
-		local map = {
-			[Enum.EasingDirection.In] = __in,
-			[Enum.EasingDirection.Out] = __out,
-			[Enum.EasingDirection.InOut] = __inOut,
-		}
+	local function __circOut()
+		return sqrt(1 - pow(schedule - 1, 2))
+	end
 
-		return map[direction]()
+	local function __circInOut()
+		if schedule < 0.5 then
+			return (1 - sqrt(1 - pow(2 * schedule, 2))) / 2
+		else
+			return (sqrt(1 - pow(-2 * schedule, 2)) + 1) / 2
+		end
 	end
 	--#endregion
 	--#region // Elastic
-	local function __elastic()
+	local function __elasticIn()
 		local A = (2 * pi) / 3
 
-		local function __in()
-			if schedule == 0 then
-				return 0
-			elseif schedule == 1 then
-				return 1
-			else
-				return pow(2, 10 * schedule - 10) * sin((schedule * 10 - 10.75) * A)
-			end
+		if schedule == 0 then
+			return 0
+		elseif schedule == 1 then
+			return 1
+		else
+			return pow(2, 10 * schedule - 10) * sin((schedule * 10 - 10.75) * A)
 		end
-		local function __out()
-			if schedule == 0 then
-				return 0
-			elseif schedule == 1 then
-				return 1
-			else
-				return pow(2, -10 * schedule) * sin((schedule * 10 - 0.75) * A) + 1
-			end
+	end
+
+	local function __elasticOut()
+		local A = (2 * pi) / 3
+
+		if schedule == 0 then
+			return 0
+		elseif schedule == 1 then
+			return 1
+		else
+			return pow(2, -10 * schedule) * sin((schedule * 10 - 0.75) * A) + 1
 		end
-		local function __inOut()
-			A = (2 * pi) / 4.5
+	end
 
-			if schedule == 0 then
-				return 0
-			elseif schedule == 1 then
-				return 1
-			end
+	local function __elasticInOut()
+		local A = (2 * pi) / 4.5
 
-			if schedule < 0.5 then
-				return -(pow(2, 20 * schedule - 10) * sin((20 * schedule - 11.125) * A)) / 2
-			else
-				return (pow(2, -20 * schedule + 10) * sin((20 * schedule - 11.125) * A)) / 2 + 1
-			end
+		if schedule == 0 then
+			return 0
+		elseif schedule == 1 then
+			return 1
 		end
 
-		local map = {
-			[Enum.EasingDirection.In] = __in,
-			[Enum.EasingDirection.Out] = __out,
-			[Enum.EasingDirection.InOut] = __inOut,
-		}
-
-		return map[direction]()
+		if schedule < 0.5 then
+			return -(pow(2, 20 * schedule - 10) * sin((20 * schedule - 11.125) * A)) / 2
+		else
+			return (pow(2, -20 * schedule + 10) * sin((20 * schedule - 11.125) * A)) / 2 + 1
+		end
 	end
 	--#endregion
 	--#region // Back
-	local function __back()
+	local function __backIn()
 		local A = 1.70158
 		local B = A + 1
 
-		local function __in()
-			return B * schedule * schedule * schedule - A * schedule * schedule
-		end
-		local function __out()
-			return 1 + B * pow(schedule - 1, 3) + A * pow(schedule - 1, 2)
-		end
-		local function __inOut()
-			A, B = 1.70158, A * 1.525
+		return B * schedule * schedule * schedule - A * schedule * schedule
+	end
 
-			if schedule < 0.5 then
-				return (pow(2 * schedule, 2) * ((B + 1) * 2 * schedule - B)) / 2
-			else
-				return (pow(2 * schedule - 2, 2) * ((B + 1) * (2 * schedule - 2) + B) + 2) / 2
-			end
+	local function __backOut()
+		local A = 1.70158
+		local B = A + 1
+
+		return 1 + B * pow(schedule - 1, 3) + A * pow(schedule - 1, 2)
+	end
+
+	local function __backInOut()
+		local A = 1.70158
+		local B = A * 1.525
+
+		if schedule < 0.5 then
+			return (pow(2 * schedule, 2) * ((B + 1) * 2 * schedule - B)) / 2
+		else
+			return (pow(2 * schedule - 2, 2) * ((B + 1) * (2 * schedule - 2) + B) + 2) / 2
 		end
-
-		local map = {
-			[Enum.EasingDirection.In] = __in,
-			[Enum.EasingDirection.Out] = __out,
-			[Enum.EasingDirection.InOut] = __inOut,
-		}
-
-		return map[direction]()
 	end
 	--#endregion
 	--#region // Bounce
-	local function __bounce()
-		local function __out(bSchedule: number)
-			local A, B = 7.5625, 2.75
+	local function __bounceOut(bSchedule: number)
+		local A, B = 7.5625, 2.75
 
-			if bSchedule < 1 / B then
-				return A * bSchedule * bSchedule
-			elseif bSchedule < 2 / B then
-				bSchedule -= 1.5 / B
+		if bSchedule < 1 / B then
+			return A * bSchedule * bSchedule
+		elseif bSchedule < 2 / B then
+			bSchedule -= 1.5 / B
 
-				return A * bSchedule * bSchedule + 0.75
-			elseif bSchedule < 2.5 / B then
-				bSchedule -= 2.25 / B
+			return A * bSchedule * bSchedule + 0.75
+		elseif bSchedule < 2.5 / B then
+			bSchedule -= 2.25 / B
 
-				return A * bSchedule * bSchedule + 0.9375
-			else
-				bSchedule -= 2.625 / B
+			return A * bSchedule * bSchedule + 0.9375
+		else
+			bSchedule -= 2.625 / B
 
-				return A * bSchedule * bSchedule + 0.984375
-			end
+			return A * bSchedule * bSchedule + 0.984375
 		end
-		local function __in()
-			return 1 - __out(1 - schedule)
-		end
-		local function __inOut()
-			if schedule < 0.5 then
-				return (1 - __out(1 - 2 * schedule)) / 2
-			else
-				return (1 + __out(1 - 2 * schedule)) / 2
-			end
-		end
+	end
 
-		local map = {
-			[Enum.EasingDirection.In] = __in,
-			[Enum.EasingDirection.Out] = __out,
-			[Enum.EasingDirection.InOut] = __inOut,
-		}
+	local function __bounceIn()
+		return 1 - __bounceOut(1 - schedule)
+	end
 
-		return map[direction]()
+	local function __bounceInOut()
+		if schedule < 0.5 then
+			return (1 - __bounceOut(1 - 2 * schedule)) / 2
+		else
+			return (1 + __bounceOut(1 - 2 * schedule)) / 2
+		end
 	end
 	--#endregion
 	local map = {
-		[Enum.EasingStyle.Linear] = __linear,
-		[Enum.EasingStyle.Quad] = __quad,
-		[Enum.EasingStyle.Cubic] = __cubic,
-		[Enum.EasingStyle.Quart] = __quart,
-		[Enum.EasingStyle.Quint] = __quint,
-		[Enum.EasingStyle.Sine] = __sine,
-		[Enum.EasingStyle.Exponential] = __expo,
-		[Enum.EasingStyle.Circular] = __circ,
-		[Enum.EasingStyle.Elastic] = __elastic,
-		[Enum.EasingStyle.Back] = __back,
-		[Enum.EasingStyle.Bounce] = __bounce
+		["LinearIn"] = __linear,
+		["LinearOut"] = __linear,
+		["LinearInOut"] = __linear,
+		["QuadIn"] = __quadIn,
+		["QuadOut"] = __quadOut,
+		["QuadInOut"] = __quadInOut,
+		["CubicIn"] = __cubicIn,
+		["CubicOut"] = __cubicOut,
+		["CubicInOut"] = __cubicInOut,
+		["QuartIn"] = __quartIn,
+		["QuartOut"] = __quartOut,
+		["QuartInOut"] = __quartInOut,
+		["QuintIn"] = __quintIn,
+		["QuintOut"] = __quintOut,
+		["QuintInOut"] = __quintInOut,
+		["SineIn"] = __sineIn,
+ 		["SineOut"] = __sineOut,
+		["SineInOut"] = __sineInOut,
+		["ExponentialIn"] = __expoIn,
+		["ExponentialOut"] = __expoOut,
+		["ExponentialInOut"] = __expoInOut,
+		["CircularIn"] = __circIn,
+		["CircularOut"] = __circOut,
+		["CircularInOut"] = __circInOut,
+		["ElasticIn"] = __elasticIn,
+		["ElasticOut"] = __elasticOut,
+		["ElasticInOut"] = __elasticInOut,
+		["BackIn"] = __backIn,
+		["BackOut"] = __backOut,
+		["BackInOut"] = __backInOut,
+		["BounceIn"] = __bounceIn,
+		["BounceOut"] = __bounceOut,
+		["BounceInOut"] = __bounceInOut
 	}
 
-	return map[style]()
+	style, direction = tostring(style), tostring(direction)
+
+	local variant1, variant2 = match(style, "^Enum.EasingStyle%.([^-]+)$"), match(direction, "^Enum.EasingDirection%.([^-]+)$")
+	local final = format("%s%s", variant1, variant2)
+
+	return map[final](schedule)
 end
 
 local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: number): sourceType
 	--#region // Color3
-	local function color3()
+	local function __color3()
 		A, B = A :: Color3, B :: Color3
 
 		local R1, G1, B1 = A.R, A.G, A.B
@@ -384,7 +339,7 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 	end
 	--#endregion
 	--#region // ColorSequenceKeypoint
-	local function colorSequenceKeypoint()
+	local function __colorSequenceKeypoint()
 		A, B = A :: ColorSequenceKeypoint, B :: ColorSequenceKeypoint
 
 		local T1, T2 = A.Time, B.Time
@@ -401,7 +356,7 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 	end
 	--#endregion
 	--#region // DateTime
-	local function dateTime()
+	local function __dateTime()
 		A, B = A :: DateTime, B :: DateTime
 
 		local T1, T2 = A.UnixTimestampMillis, B.UnixTimestampMillis
@@ -410,14 +365,14 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 	end
 	--#endregion
 	--#region // number
-	local function number()
+	local function __number()
 		A, B = A :: number, B :: number
 
 		return A + (B - A) * alpha
 	end
 	--#endregion
 	--#region // NumberRange
-	local function numberRange()
+	local function __numberRange()
 		A, B = A :: NumberRange, B :: NumberRange
 
 		local Min1, Min2 = A.Min, B.Min
@@ -427,7 +382,7 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 	end
 	--#endregion
 	--#region // NumberSequenceKeypoint
-	local function numberSequenceKeypoint()
+	local function __numberSequenceKeypoint()
 		A, B = A :: NumberSequenceKeypoint, B :: NumberSequenceKeypoint
 
 		local E1, E2 = A.Envelope, B.Envelope
@@ -442,7 +397,7 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 	end
 	--#endregion
 	--#region // Ray
-	local function ray()
+	local function __ray()
 		A, B = A :: Ray, B :: Ray
 
 		local D1, D2 = A.Direction, B.Direction
@@ -463,7 +418,7 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 	end
 	--#endregion
 	--#region // Rect
-	local function rect()
+	local function __rect()
 		A, B = A :: Rect, B :: Rect
 
 		local Min1, Min2 = A.Min, B.Min
@@ -476,7 +431,7 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 	end
 	--#endregion
 	--#region // Region3
-	local function region3()
+	local function __region3()
 		A, B = A :: Region3, B :: Region3
 
 		local position = A.CFrame.Position:Lerp(B.CFrame.Position, alpha)
@@ -486,47 +441,47 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 	end
 	--#endregion
 	--#region // CFrame
-	local function cframe()
+	local function __cframe()
 		A, B = A :: CFrame, B :: CFrame
 
 		return A:Lerp(B, alpha)
 	end
 	--#endregion
 	--#region // UDim2
-	local function udim2()
+	local function __udim2()
 		A, B = A :: UDim2, B :: UDim2
 
 		return A:Lerp(B, alpha)
 	end
 	--#endregion
 	--#region // Vector2
-	local function vector2()
+	local function __vector2()
 		A, B = A :: Vector2, B :: Vector2
 
 		return A:Lerp(B, alpha)
 	end
 	--#endregion
 	--#region // Vector3
-	local function vector3()
+	local function __vector3()
 		A, B = A :: Vector3, B :: Vector3
 
 		return A:Lerp(B, alpha)
 	end
 	--#endregion
 	local map = {
-		["CFrame"] = cframe,
-		["Color3"] = color3,
-		["ColorSequenceKeypoint"] = colorSequenceKeypoint,
-		["DateTime"] = dateTime,
-		["number"] = number,
-		["NumberRange"] = numberRange,
-		["NumberSequenceKeypoint"] = numberSequenceKeypoint,
-		["Ray"] = ray,
-		["Rect"] = rect,
-		["Region3"] = region3,
-		["UDim2"] = udim2,
-		["Vector2"] = vector2,
-		["Vector3"] = vector3
+		["CFrame"] = __cframe,
+		["Color3"] = __color3,
+		["ColorSequenceKeypoint"] = __colorSequenceKeypoint,
+		["DateTime"] = __dateTime,
+		["number"] = __number,
+		["NumberRange"] = __numberRange,
+		["NumberSequenceKeypoint"] = __numberSequenceKeypoint,
+		["Ray"] = __ray,
+		["Rect"] = __rect,
+		["Region3"] = __region3,
+		["UDim2"] = __udim2,
+		["Vector2"] = __vector2,
+		["Vector3"] = __vector3
 	}
 
 	return map[variant]()
