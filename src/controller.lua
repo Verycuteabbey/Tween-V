@@ -125,41 +125,37 @@ function controller:Create(
 		easeOptions = info.easeOptions
 		info = self.info
 
-		local function __main(deltaTime: number, property: string)
-			local nowTime = 0
+		local nowTime = 0
 
-			local function __tween()
-				status = self.status
+		local function __tween(deltaTime: number, property: string)
+			status = self.status
 
-				if status.yield then return end
+			if status.yield then return end
 
-				if nowTime > easeOptions.duration then
-					self.threads[property]:Disconnect()
-					nowTime = easeOptions.duration
-				end
-
-				local variant = library:Lerp(
-					easeOptions,
-					info.properties[property],
-					target[property],
-					nowTime / easeOptions.duration
-				)
-				instance[property] = variant
-
-				nowTime += deltaTime
+			if nowTime > easeOptions.duration then
+				self.threads[property]:Disconnect()
+				nowTime = easeOptions.duration
 			end
 
-			__tween()
+			local variant = library:Lerp(
+				easeOptions,
+				info.properties[property],
+				target[property],
+				nowTime / easeOptions.duration
+			)
+			instance[property] = variant
+
+			nowTime += deltaTime
 		end
 
-		self.func = __main
+		self.func = __tween
 
 		for K, _ in pairs(target) do
-			local function __tween(deltaTime: number)
-				__main(deltaTime, K)
+			local function __main(deltaTime: number)
+				__tween(deltaTime, K)
 			end
 
-			local connection = runService.Heartbeat:Connect(__tween)
+			local connection = runService.Heartbeat:Connect(__main)
 
 			self.threads[K] = connection
 		end
