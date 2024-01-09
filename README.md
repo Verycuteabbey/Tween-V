@@ -31,10 +31,10 @@ local library = require(path.to.library) -- 记得换成自己存放的路径
 
 library:Lerp(
     easeOptions: {
-		style: Enum.EasingStyle | string?,
-		direction: Enum.EasingDirection | string?,
-		extra: { amplitude: number?, period: number? }?
-	}?,
+        style: Enum.EasingStyle | string?,
+        direction: Enum.EasingDirection | string?,
+        extra: { amplitude: number?, period: number? }?
+    }?,
     A: sourceType,
     B: sourceType, 
     schedule: number
@@ -69,19 +69,19 @@ library:Lerp(
 
 ```lua
 type positionType =
-	CFrame
-	| Color3
-	| ColorSequenceKeypoint
-	| DateTime
-	| number
-	| NumberRange
-	| NumberSequenceKeypoint
-	| Ray
-	| Rect
-	| Region3
-	| UDim2
-	| Vector2
-	| Vector3
+    CFrame
+    | Color3
+    | ColorSequenceKeypoint
+    | DateTime
+    | number
+    | NumberRange
+    | NumberSequenceKeypoint
+    | Ray
+    | Rect
+    | Region3
+    | UDim2
+    | Vector2
+    | Vector3
 ```
 
 ---
@@ -148,11 +148,11 @@ local tweenV = require(script.library)
 tweenV:Create(
     instance: Instance,
     easeOptions: {
-		style: Enum.EasingStyle | string?,
-		direction: Enum.EasingDirection | string?,
-		duration: number?,
-		extra: { amplitude: number?, period: number? }?
-	}?,
+        style: Enum.EasingStyle | string?,
+        direction: Enum.EasingDirection | string?,
+        duration: number?,
+        extra: { amplitude: number?, period: number? }?
+    }?,
     target: table
 ): table
 ```
