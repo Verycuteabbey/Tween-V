@@ -14,10 +14,18 @@
 --// defines
 local cos, pi, pow, sin, sqrt = math.cos, math.pi, math.pow, math.sin, math.sqrt
 local format = string.format
-local freeze = table.freeze
+local fromUnixTimestampMillis = DateTime.fromUnixTimestampMillis
+local newColor3 = Color3.new
+local newColorSequenceKeypoint = ColorSequenceKeypoint.new
+local newNumberRange = NumberRange.new
+local newNumberSequenceKeypoint = NumberSequenceKeypoint.new
+local newRay = Ray.new
+local newRect = Rect.new
+local newRegion3 = Region3.new
+local newVector2 = Vector2.new
+local newVector3 = Vector3.new
+local match = string.match
 
-type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce"
-type easeDirection = "In" | "Out" | "InOut"
 type sourceType =
 	CFrame
 	| Color3
@@ -36,23 +44,22 @@ type sourceType =
 local library = {}
 
 --// functions
-local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: number): number
-	local A: number, B: number
+local function __getAlpha(style: Enum.EasingStyle | string, direction: Enum.EasingDirection | string, schedule: number)
 	--#region // Linear
-	local function linear(): number
+	local function __linear()
 		return schedule
 	end
 	--#endregion
 	--#region // Quad
-	local function quadIn(): number
+	local function __quadIn()
 		return schedule * schedule
 	end
 
-	local function quadOut(): number
+	local function __quadOut()
 		return 1 - (1 - schedule) * (1 - schedule)
 	end
 
-	local function quadInOut(): number
+	local function __quadInOut()
 		if schedule < 0.5 then
 			return 2 * schedule * schedule
 		else
@@ -61,15 +68,15 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 	end
 	--#endregion
 	--#region // Cubic
-	local function cubicIn(): number
+	local function __cubicIn()
 		return schedule * schedule * schedule
 	end
 
-	local function cubicOut(): number
+	local function __cubicOut()
 		return 1 - pow(1 - schedule, 3)
 	end
 
-	local function cubicInOut(): number
+	local function __cubicInOut()
 		if schedule < 0.5 then
 			return 4 * schedule * schedule * schedule
 		else
@@ -78,15 +85,15 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 	end
 	--#endregion
 	--#region // Quart
-	local function quartIn(): number
+	local function __quartIn()
 		return schedule * schedule * schedule * schedule
 	end
 
-	local function quartOut(): number
+	local function __quartOut()
 		return 1 - pow(1 - schedule, 4)
 	end
 
-	local function quartInOut(): number
+	local function __quartInOut()
 		if schedule < 0.5 then
 			return 8 * schedule * schedule * schedule * schedule
 		else
@@ -95,15 +102,15 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 	end
 	--#endregion
 	--#region // Quint
-	local function quintIn(): number
+	local function __quintIn()
 		return schedule * schedule * schedule * schedule * schedule
 	end
 
-	local function quintOut(): number
+	local function __quintOut()
 		return 1 - pow(1 - schedule, 5)
 	end
 
-	local function quintInOut(): number
+	local function __quintInOut()
 		if schedule < 0.5 then
 			return 16 * schedule * schedule * schedule * schedule * schedule
 		else
@@ -112,20 +119,20 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 	end
 	--#endregion
 	--#region // Sine
-	local function sineIn(): number
+	local function __sineIn()
 		return 1 - cos((schedule * pi) / 2)
 	end
 
-	local function sineOut(): number
+	local function __sineOut()
 		return sin((schedule * pi) / 2)
 	end
 
-	local function sineInOut(): number
+	local function __sineInOut()
 		return -(cos(schedule * pi) - 1) / 2
 	end
 	--#endregion
 	--#region // Expo
-	local function expoIn(): number
+	local function __expoIn()
 		if schedule == 0 then
 			return 0
 		else
@@ -133,7 +140,7 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 		end
 	end
 
-	local function expoOut(): number
+	local function __expoOut()
 		if schedule == 1 then
 			return 1
 		else
@@ -141,7 +148,7 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 		end
 	end
 
-	local function expoInOut(): number
+	local function __expoInOut()
 		if schedule == 0 then
 			return 0
 		elseif schedule == 1 then
@@ -156,15 +163,15 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 	end
 	--#endregion
 	--#region // Circ
-	local function circIn(): number
+	local function __circIn()
 		return 1 - sqrt(1 - pow(schedule, 2))
 	end
 
-	local function circOut(): number
+	local function __circOut()
 		return sqrt(1 - pow(schedule - 1, 2))
 	end
 
-	local function circInOut(): number
+	local function __circInOut()
 		if schedule < 0.5 then
 			return (1 - sqrt(1 - pow(2 * schedule, 2))) / 2
 		else
@@ -173,8 +180,8 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 	end
 	--#endregion
 	--#region // Elastic
-	local function elasticIn(): number
-		A = (2 * pi) / 3
+	local function __elasticIn()
+		local A = (2 * pi) / 3
 
 		if schedule == 0 then
 			return 0
@@ -185,8 +192,8 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 		end
 	end
 
-	local function elasticOut(): number
-		A = (2 * pi) / 3
+	local function __elasticOut()
+		local A = (2 * pi) / 3
 
 		if schedule == 0 then
 			return 0
@@ -197,8 +204,8 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 		end
 	end
 
-	local function elasticInOut(): number
-		A = (2 * pi) / 4.5
+	local function __elasticInOut()
+		local A = (2 * pi) / 4.5
 
 		if schedule == 0 then
 			return 0
@@ -214,20 +221,23 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 	end
 	--#endregion
 	--#region // Back
-	local function backIn(): number
-		A, B = 1.70158, A + 1
+	local function __backIn()
+		local A = 1.70158
+		local B = A + 1
 
 		return B * schedule * schedule * schedule - A * schedule * schedule
 	end
 
-	local function backOut(): number
-		A, B = 1.70158, A + 1
+	local function __backOut()
+		local A = 1.70158
+		local B = A + 1
 
 		return 1 + B * pow(schedule - 1, 3) + A * pow(schedule - 1, 2)
 	end
 
-	local function backInOut(): number
-		A, B = 1.70158, A * 1.525
+	local function __backInOut()
+		local A = 1.70158
+		local B = A * 1.525
 
 		if schedule < 0.5 then
 			return (pow(2 * schedule, 2) * ((B + 1) * 2 * schedule - B)) / 2
@@ -237,88 +247,99 @@ local function __getAlpha(style: easeStyle, direction: easeDirection, schedule: 
 	end
 	--#endregion
 	--#region // Bounce
-	local function bounceOut(bSchedule: number): number
-		A, B = 7.5625, 2.75
+	local function __bounceOut(_schedule: number)
+		local A, B = 7.5625, 2.75
 
-		if bSchedule < 1 / B then
-			return A * bSchedule * bSchedule
-		elseif bSchedule < 2 / B then
-			bSchedule -= 1.5 / B
+		if _schedule < 1 / B then
+			return A * _schedule * _schedule
+		elseif _schedule < 2 / B then
+			_schedule -= 1.5 / B
 
-			return A * bSchedule * bSchedule + 0.75
-		elseif bSchedule < 2.5 / B then
-			bSchedule -= 2.25 / B
+			return A * _schedule * _schedule + 0.75
+		elseif _schedule < 2.5 / B then
+			_schedule -= 2.25 / B
 
-			return A * bSchedule * bSchedule + 0.9375
+			return A * _schedule * _schedule + 0.9375
 		else
-			bSchedule -= 2.625 / B
+			_schedule -= 2.625 / B
 
-			return A * bSchedule * bSchedule + 0.984375
+			return A * _schedule * _schedule + 0.984375
 		end
 	end
 
-	local function bounceIn(): number
-		return 1 - bounceOut(1 - schedule)
+	local function __bounceIn()
+		return 1 - __bounceOut(1 - schedule)
 	end
 
-	local function bounceInOut(): number
+	local function __bounceInOut()
 		if schedule < 0.5 then
-			return (1 - bounceOut(1 - 2 * schedule)) / 2
+			return (1 - __bounceOut(1 - 2 * schedule)) / 2
 		else
-			return (1 + bounceOut(1 - 2 * schedule)) / 2
+			return (1 + __bounceOut(1 - 2 * schedule)) / 2
 		end
 	end
 	--#endregion
 	local map = {
-		["LinearIn"] = linear,
-		["LinearOut"] = linear,
-		["LinearInOut"] = linear,
-		["QuadIn"] = quadIn,
-		["QuadOut"] = quadOut,
-		["QuadInOut"] = quadInOut,
-		["CubicIn"] = cubicIn,
-		["CubicOut"] = cubicOut,
-		["CubicInOut"] = cubicInOut,
-		["QuartIn"] = quartIn,
-		["QuartOut"] = quartOut,
-		["QuartInOut"] = quartInOut,
-		["QuintIn"] = quintIn,
-		["QuintOut"] = quintOut,
-		["QuintInOut"] = quintInOut,
-		["SineIn"] = sineIn,
-		["SineOut"] = sineOut,
-		["SineInOut"] = sineInOut,
-		["ExpoIn"] = expoIn,
-		["ExpoOut"] = expoOut,
-		["ExpoInOut"] = expoInOut,
-		["CircIn"] = circIn,
-		["CircOut"] = circOut,
-		["CircInOut"] = circInOut,
-		["ElasticIn"] = elasticIn,
-		["ElasticOut"] = elasticOut,
-		["ElasticInOut"] = elasticInOut,
-		["BackIn"] = backIn,
-		["BackOut"] = backOut,
-		["BackInOut"] = backInOut,
-		["BounceIn"] = bounceIn,
-		["BounceOut"] = bounceOut,
-		["BounceInOut"] = bounceInOut,
+		["LinearIn"] = __linear,
+		["LinearOut"] = __linear,
+		["LinearInOut"] = __linear,
+		["QuadIn"] = __quadIn,
+		["QuadOut"] = __quadOut,
+		["QuadInOut"] = __quadInOut,
+		["CubicIn"] = __cubicIn,
+		["CubicOut"] = __cubicOut,
+		["CubicInOut"] = __cubicInOut,
+		["QuartIn"] = __quartIn,
+		["QuartOut"] = __quartOut,
+		["QuartInOut"] = __quartInOut,
+		["QuintIn"] = __quintIn,
+		["QuintOut"] = __quintOut,
+		["QuintInOut"] = __quintInOut,
+		["SineIn"] = __sineIn,
+		["SineOut"] = __sineOut,
+		["SineInOut"] = __sineInOut,
+		["ExponentialIn"] = __expoIn,
+		["ExponentialOut"] = __expoOut,
+		["ExponentialInOut"] = __expoInOut,
+		["CircularIn"] = __circIn,
+		["CircularOut"] = __circOut,
+		["CircularInOut"] = __circInOut,
+		["ElasticIn"] = __elasticIn,
+		["ElasticOut"] = __elasticOut,
+		["ElasticInOut"] = __elasticInOut,
+		["BackIn"] = __backIn,
+		["BackOut"] = __backOut,
+		["BackInOut"] = __backInOut,
+		["BounceIn"] = __bounceIn,
+		["BounceOut"] = __bounceOut,
+		["BounceInOut"] = __bounceInOut
 	}
 
-	local variant = format("%s%s", style, direction)
+	local variant: string
+	local _type = typeof(style) or typeof(direction)
 
-	return map[variant]()
+	if _type == "Enum" then
+		style, direction = tostring(style), tostring(direction)
+
+		local variant1, variant2 =
+			match(style, "^Enum.EasingStyle%.([^-]+)$"), match(direction, "^Enum.EasingDirection%.([^-]+)$")
+		variant = format("%s%s", variant1, variant2)
+	elseif _type == "string" then
+		variant = format("%s%s", style, direction)
+	end
+
+	return map[variant](schedule)
 end
 
 local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: number): sourceType
 	--#region // Color3
-	local function color3(): Color3
-		local A, B = A :: Color3, B :: Color3
+	local function __color3()
+		A, B = A :: Color3, B :: Color3
 
-		local R1, G1, B1 = A.R :: number, A.G :: number, A.B :: number
-		local R2, G2, B2 = B.R :: number, B.G :: number, B.B :: number
+		local R1, G1, B1 = A.R, A.G, A.B
+		local R2, G2, B2 = B.R, B.G, B.B
 
-		return Color3.new(
+		return newColor3(
 			__getLerp("number", R1, R2, alpha),
 			__getLerp("number", G1, G2, alpha),
 			__getLerp("number", B1, B2, alpha)
@@ -326,57 +347,57 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 	end
 	--#endregion
 	--#region // ColorSequenceKeypoint
-	local function colorSequenceKeypoint(): ColorSequenceKeypoint
-		local A, B = A :: ColorSequenceKeypoint, B :: ColorSequenceKeypoint
+	local function __colorSequenceKeypoint()
+		A, B = A :: ColorSequenceKeypoint, B :: ColorSequenceKeypoint
 
-		local T1, T2 = A.Time :: number, B.Time :: number
-		local R1, G1, B1 = A.Value.R :: number, A.Value.G :: number, A.Value.B :: number
-		local R2, G2, B2 = B.Value.R :: number, B.Value.G :: number, B.Value.B :: number
+		local T1, T2 = A.Time, B.Time
+		local R1, G1, B1 = A.Value.R, A.Value.G, A.Value.B
+		local R2, G2, B2 = B.Value.R, B.Value.G, B.Value.B
 
-		local color = Color3.new(
+		local color = newColor3(
 			__getLerp("number", R1, R2, alpha),
 			__getLerp("number", G1, G2, alpha),
 			__getLerp("number", B1, B2, alpha)
 		)
 
-		return ColorSequenceKeypoint.new(__getLerp("number", T1, T2, alpha), color)
+		return newColorSequenceKeypoint(__getLerp("number", T1, T2, alpha), color)
 	end
 	--#endregion
 	--#region // DateTime
-	local function dateTime(): DateTime
-		local A, B = A :: DateTime, B :: DateTime
+	local function __dateTime()
+		A, B = A :: DateTime, B :: DateTime
 
-		local T1, T2 = A.UnixTimestampMillis :: number, B.UnixTimestampMillis :: number
+		local T1, T2 = A.UnixTimestampMillis, B.UnixTimestampMillis
 
-		return DateTime.fromUnixTimestampMillis(__getLerp("number", T1, T2, alpha))
+		return fromUnixTimestampMillis(__getLerp("number", T1, T2, alpha))
 	end
 	--#endregion
 	--#region // number
-	local function number(): number
-		local A, B = A :: number, B :: number
+	local function __number()
+		A, B = A :: number, B :: number
 
 		return A + (B - A) * alpha
 	end
 	--#endregion
 	--#region // NumberRange
-	local function numberRange(): NumberRange
-		local A, B = A :: NumberRange, B :: NumberRange
+	local function __numberRange()
+		A, B = A :: NumberRange, B :: NumberRange
 
-		local Min1, Min2 = A.Min :: number, B.Min :: number
-		local Max1, Max2 = A.Max :: number, B.Max :: number
+		local Min1, Min2 = A.Min, B.Min
+		local Max1, Max2 = A.Max, B.Max
 
-		return NumberRange.new(__getLerp("number", Min1, Min2, alpha), __getLerp("number", Max1, Max2, alpha))
+		return newNumberRange(__getLerp("number", Min1, Min2, alpha), __getLerp("number", Max1, Max2, alpha))
 	end
 	--#endregion
 	--#region // NumberSequenceKeypoint
-	local function numberSequenceKeypoint(): NumberSequenceKeypoint
-		local A, B = A :: NumberSequenceKeypoint, B :: NumberSequenceKeypoint
+	local function __numberSequenceKeypoint()
+		A, B = A :: NumberSequenceKeypoint, B :: NumberSequenceKeypoint
 
-		local E1, E2 = A.Envelope :: number, B.Envelope :: number
-		local T1, T2 = A.Time :: number, B.Time :: number
-		local V1, V2 = A.Value :: number, B.Value :: number
+		local E1, E2 = A.Envelope, B.Envelope
+		local T1, T2 = A.Time, B.Time
+		local V1, V2 = A.Value, B.Value
 
-		return NumberSequenceKeypoint.new(
+		return newNumberSequenceKeypoint(
 			__getLerp("number", T1, T2, alpha),
 			__getLerp("number", V1, V2, alpha),
 			__getLerp("number", E1, E2, alpha)
@@ -384,131 +405,123 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 	end
 	--#endregion
 	--#region // Ray
-	local function ray(): Ray
-		local A, B = A :: Ray, B :: Ray
+	local function __ray()
+		A, B = A :: Ray, B :: Ray
 
-		local D1, D2 = A.Direction :: Vector3, B.Direction :: Vector3
-		local O1, O2 = A.Origin :: Vector3, B.Origin :: Vector3
+		local D1, D2 = A.Direction, B.Direction
+		local O1, O2 = A.Origin, B.Origin
 
-		local V1 = Vector3.new(
+		local V1 = newVector3(
 			__getLerp("number", O1.X, O2.X, alpha),
 			__getLerp("number", O1.Y, O2.Y, alpha),
 			__getLerp("number", O1.Z, O2.Z, alpha)
 		)
-		local V2 = Vector3.new(
+		local V2 = newVector3(
 			__getLerp("number", D1.X, D2.X, alpha),
 			__getLerp("number", D1.Y, D2.Y, alpha),
 			__getLerp("number", D1.Z, D2.Z, alpha)
 		)
 
-		return Ray.new(V1, V2)
+		return newRay(V1, V2)
 	end
 	--#endregion
 	--#region // Rect
-	local function rect(): Rect
-		local A, B = A :: Rect, B :: Rect
+	local function __rect()
+		A, B = A :: Rect, B :: Rect
 
-		local Min1, Min2 = A.Min :: Vector2, B.Min :: Vector2
-		local Max1, Max2 = A.Max :: Vector2, B.Max :: Vector2
+		local Min1, Min2 = A.Min, B.Min
+		local Max1, Max2 = A.Max, B.Max
 
-		local V1 = Vector2.new(__getLerp("number", Min1.X, Min2.X, alpha), __getLerp("number", Min1.Y, Min2.Y, alpha))
-		local V2 = Vector2.new(__getLerp("number", Max1.X, Max2.X, alpha), __getLerp("number", Max1.Y, Max2.Y, alpha))
+		local V1 = newVector2(__getLerp("number", Min1.X, Min2.X, alpha), __getLerp("number", Min1.Y, Min2.Y, alpha))
+		local V2 = newVector2(__getLerp("number", Max1.X, Max2.X, alpha), __getLerp("number", Max1.Y, Max2.Y, alpha))
 
-		return Rect.new(V1, V2)
+		return newRect(V1, V2)
 	end
 	--#endregion
 	--#region // Region3
-	local function region3(): Region3
-		local A, B = A :: Region3, B :: Region3
+	local function __region3()
+		A, B = A :: Region3, B :: Region3
 
 		local position = A.CFrame.Position:Lerp(B.CFrame.Position, alpha)
 		local halfSize = A.Size:Lerp(B.Size, alpha) / 2
 
-		return Region3.new(position - halfSize, position + halfSize)
+		return newRegion3(position - halfSize, position + halfSize)
 	end
 	--#endregion
 	--#region // CFrame
-	local function cframe(): CFrame
-		local A, B = A :: CFrame, B :: CFrame
+	local function __cframe()
+		A, B = A :: CFrame, B :: CFrame
 
 		return A:Lerp(B, alpha)
 	end
 	--#endregion
 	--#region // UDim2
-	local function udim2(): UDim2
-		local A, B = A :: UDim2, B :: UDim2
+	local function __udim2()
+		A, B = A :: UDim2, B :: UDim2
 
 		return A:Lerp(B, alpha)
 	end
 	--#endregion
 	--#region // Vector2
-	local function vector2(): Vector2
-		local A, B = A :: Vector2, B :: Vector2
+	local function __vector2()
+		A, B = A :: Vector2, B :: Vector2
 
 		return A:Lerp(B, alpha)
 	end
 	--#endregion
 	--#region // Vector3
-	local function vector3(): Vector3
-		local A, B = A :: Vector3, B :: Vector3
+	local function __vector3()
+		A, B = A :: Vector3, B :: Vector3
 
 		return A:Lerp(B, alpha)
 	end
 	--#endregion
 	local map = {
-		["CFrame"] = cframe,
-		["Color3"] = color3,
-		["ColorSequenceKeypoint"] = colorSequenceKeypoint,
-		["DateTime"] = dateTime,
-		["number"] = number,
-		["NumberRange"] = numberRange,
-		["NumberSequenceKeypoint"] = numberSequenceKeypoint,
-		["Ray"] = ray,
-		["Rect"] = rect,
-		["Region3"] = region3,
-		["UDim2"] = udim2,
-		["Vector2"] = vector2,
-		["Vector3"] = vector3
+		["CFrame"] = __cframe,
+		["Color3"] = __color3,
+		["ColorSequenceKeypoint"] = __colorSequenceKeypoint,
+		["DateTime"] = __dateTime,
+		["number"] = __number,
+		["NumberRange"] = __numberRange,
+		["NumberSequenceKeypoint"] = __numberSequenceKeypoint,
+		["Ray"] = __ray,
+		["Rect"] = __rect,
+		["Region3"] = __region3,
+		["UDim2"] = __udim2,
+		["Vector2"] = __vector2,
+		["Vector3"] = __vector3
 	}
 
 	return map[variant]()
 end
 
 function library:Lerp(
-	easeOptions: { style: easeStyle?, direction: easeDirection? }?,
+	easeOptions: { style: Enum.EasingStyle | string?, direction: Enum.EasingDirection | string? }?,
 	A: sourceType,
 	B: sourceType,
 	schedule: number
-): sourceType
+): sourceType | nil
 	--#region // default
 	if not easeOptions then
-		warn("Tween-V - Warning // A empty easeOptions has been given, using default")
-
 		easeOptions = {
-			style = "Linear",
-			direction = "In",
+			[1] = Enum.EasingStyle.Linear,
+			[2] = Enum.EasingDirection.InOut,
 		}
-	elseif not easeOptions.style then
-		warn("Tween-V - Warning // easeOptions has given a empty style, using default")
-
-		easeOptions.style = "Linear"
-	elseif not easeOptions.direction then
-		warn("Tween-V - Warning // easeOptions has given a empty direction, using default")
-
-		easeOptions.direction = "In"
+	elseif not easeOptions[1] then
+		easeOptions[1] = Enum.EasingStyle.Linear
+	elseif not easeOptions[2] then
+		easeOptions[2] = Enum.EasingDirection.InOut
 	end
 	--#endregion
-	local alpha = __getAlpha(easeOptions.style, easeOptions.direction, schedule)
+	local style, direction = easeOptions[1], easeOptions[2]
+	local alpha = __getAlpha(style, direction, schedule)
 
 	local typeA, typeB = typeof(A), typeof(B)
+	local _type = typeA or typeB
 
-	if typeA == typeB then
-		local sourceType = typeA :: string or typeB :: string
+	if typeA ~= typeB then return end
 
-		return __getLerp(sourceType, A, B, alpha)
-	end
-
-	error("Tween-V - Error // Only same types of position can lerp!")
+	return __getLerp(_type, A, B, alpha)
 end
 
-return freeze(library)
+return library

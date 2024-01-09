@@ -28,19 +28,21 @@
 local library = require(path.to.library) -- 记得换成自己存放的路径
 
 library:Lerp(
-    easeOptions: { style: easeStyle?, direction: easeDirection? }?,
+    easeOptions: { style: Enum.EasingStyle | string?, direction: Enum.EasingDirection | string? }?,
     A: sourceType,
-    B: sourceType,
+    B: sourceType, 
     schedule: number
 ): sourceType
 ```
 
 ---
 
+`easeOptions` 为缓动类型定义，支持 Roblox 所支持的所有类型且向 Roblox 兼容
+
 其中 `sourceType` 是给传入参数的一个定义，可以理解成当前支持插值的类型：
 
 ```lua
-type sourceType =
+type positionType =
 	CFrame
 	| Color3
 	| ColorSequenceKeypoint
@@ -56,18 +58,9 @@ type sourceType =
 	| Vector3
 ```
 
-`easeOptions` 为缓动类型定义，使用 `string` 作为传参类型
-
-> 由于个人能力不足，暂无法实现 OutIn 效果
-
-```lua
-type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce"
-type easeDirection = "In" | "Out" | "InOut"
-```
-
 `A` 为起始点（你跑步的起点），`B` 为结束点（你要到达的终点），`schedule` 为插值进度（0 ~ 1 区间）
 
-但是 `A` 与 `B` 需符合 `sourceType` 定义，提交无效或尚未支持的类型会被驳回
+但是 `A` 与 `B` 需符合 sourceType 定义，提交无效或尚未支持的类型会被驳回
 
 最终将会返回一个相同类型的插值给你
 
@@ -79,17 +72,30 @@ type easeDirection = "In" | "Out" | "InOut"
 
 > ⚠ Library 不允许出现异类型计算，不要想着 CFrame 与 Vector3 两个之间奇奇怪怪的计算！ ⚠
 
+以 `Enum` 为传参类型：
+
 ```lua
 local library = require(path.to.library) -- 记得换成自己存放的路径
 
 local result = library:Lerp(
-    { style = "Quad", direction = "Out" },
+    { Enum.EasingStyle.Quad, Enum.EasingDirection.Out },
     Vector3.new(0, 0, 0),
     Vector3.new(10, 10, 10),
     0.5
 )
 
 print(result)
+```
+
+以 `string` 为传参类型:
+
+```lua
+local result = library:Lerp(
+    { "Quad", "Out" },
+    Vector3.new(0, 0, 0),
+    Vector3.new(10, 10, 10),
+    0.5
+)
 ```
 
 输出 `result` 将会得到 Vector3 `(7.5, 7.5, 7.5)` 返回值
@@ -111,21 +117,30 @@ print(result)
 > 控制器默认 Library 路径在其之下，建议存放位置就如刚才所说
 
 ```lua
-local tweenV = require(script.library);
+local tweenV = require(script.library)
 
 tweenV:Create(
     instance: Instance,
-    property: string,
-    easeOptions: { style: easeStyle?, direction: easeDirection?, duration: number? }?,
-    target: sourceType
+    easeOption: { style: Enum.EasingStyle | string?, direction: Enum.EasingDirection | string?, duration: number? }?,
+    target: table
 ): table
 ```
 
-`instance` 就是你缓动的目标（不是 `Instance.Name`），`property` 是需要缓动的属性（传的是名字）
+`instance` 就是你缓动的目标（不是 `Instance.Name`）
 
-`easeOptions` 就不需要我介绍了吧？可有可无
+`easeOption` 就不需要我介绍了吧？可有可无
 
-`target` 就是你缓动最终的位置（也就是 Library:Lerp() 参数 `B`），同样需要满足 `sourceType` 定义
+`target` 就是你缓动最终的位置（也就是 Library:Lerp() 的参数 `B`），但是与 `TweenService` 类似为一个 table:
+
+```lua
+target = {
+    Position = Vector3.new(114, 514, 1919),
+    Size = Vector3.new(810, 114, 514),
+    Transparency = 0.5
+}
+```
+
+可一个或多个属性同时进行
 
 ---
 
@@ -136,7 +151,7 @@ local object = controller:Create(...)
 
 object:Replay() -- one more time!（位置会被重置且会打断当前）
 object:Resume() -- 时间再次流动......（不会重置位置也不会打断，因为本身就是解除冻结）
-object:Start() -- 函数，启动！（指启动缓动）
+object:Start() -- 函数，启动！（指启动 tween）
 object:Yield() -- 冻住，不许走！
 ```
 
@@ -148,7 +163,7 @@ object:Yield() -- 冻住，不许走！
 
 我 remake 这个框架时完全是用一年前的知识来写的，像 !strict 及优化是后面有兴趣学的
 
-然后没了，如果你想问为什么 VCA 又突然干起关于 Roblox 的事了？只能说我在怀旧重操旧业而已，没别的意思了
+然后没了，如果你想问为什么 VCA 又突然干起关于 Roblox 的事了？只能说我在~~怀旧~~重操旧业而已，没别的意思了
 
 但说真的，比起各位开发者我其实是个 fw 来的（真），甚至不如一个新手
 

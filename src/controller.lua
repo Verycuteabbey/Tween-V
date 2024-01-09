@@ -12,11 +12,7 @@
 --
 
 --// defines
-local freeze = table.freeze
-
-type easeStyle = "Linear" | "Quad" | "Cubic" | "Quart" | "Quint" | "Sine" | "Expo" | "Circ" | "Elastic" | "Back" | "Bounce"
-type easeDirection = "In" | "Out" | "InOut"
-type sourceType =
+type positionType =
 	CFrame
 	| Color3
 	| ColorSequenceKeypoint
@@ -39,121 +35,164 @@ local controller = {}
 --// functions
 function controller:Create(
 	instance: Instance,
-	property: string,
-	easeOptions: { style: easeStyle?, direction: easeDirection?, duration: number? }?,
-	target: sourceType
+	easeOptions: {
+		style: Enum.EasingStyle | string?,
+		direction: Enum.EasingDirection | string?,
+		duration: number?
+	}?,
+	target: table
 ): table
 	--#region // default
 	if not easeOptions then
-		warn("Tween-V - Warning // empty easeOptions has been given, using default")
-
 		easeOptions = {
-			style = "Linear",
-			direction = "In",
-			duration = 1,
+			[1] = Enum.EasingStyle.Linear,
+			[2] = Enum.EasingDirection.InOut,
+			[3] = 1
 		}
-	elseif not easeOptions.style then
-		warn("Tween-V - Warning // easeOptions has given a empty style, using default")
-
-		easeOptions.style = "Linear"
-	elseif not easeOptions.direction then
-		warn("Tween-V - Warning // easeOptions has given a empty direction, using default")
-
-		easeOptions.direction = "In"
-	elseif not easeOptions.duration then
-		warn("Tween-V - Warning // easeOptions has given a empty duration, using default")
-
-		easeOptions.duration = 1
+	elseif not easeOptions[1] then
+		easeOptions[1] = Enum.EasingStyle.Linear
+	elseif not easeOptions[2] then
+		easeOptions[2] = Enum.EasingDirection.InOut
+	elseif not easeOptions[3] then
+		easeOptions[3] = 1
 	end
 	--#endregion
 	local object = {}
 
-	object.funcs = nil
-	object.thread = nil
+	object.threads = {}
 
 	object.info = {
 		instance = instance,
-		property = property,
-		target = target,
-		value = instance[property],
 		easeOptions = easeOptions,
+		properties = {},
+		target = target
 	}
 	object.status = {
-		running = false,
 		started = false,
-		yield = false,
+		yield = false
 	}
 	--#region // Replay
 	function object:Replay()
-		if not self.funcs then
-			return
-		end
+		--#region // check
+		local status = self.status
 
-		self.thread:Disconnect()
-		local connection = runService.Heartbeat:Connect(self.funcs)
-		self.thread = connection :: RBXScriptConnection
-	end
-	--#endregion
-	--#region // Resume
-	function object:Resume()
-		local status = self.status :: table
-
-		if status.running then
-			return
-		end
+		if not status.started then return end
 
 		status.yield = false
 
 		self.status = status
+		--#endregion
+		local info = self.info
+		local properties = info.properties
+		local threads = self.threads
+
+		easeOptions = info.easeOptions
+		local duration = easeOptions[3]
+
+		local nowTime = 0
+
+		local function __tween(deltaTime: number, property: string)
+			nowTime = nowTime
+			status = self.status
+
+			if status.yield then return end
+
+			if nowTime > duration then
+				threads[property]:Disconnect()
+				nowTime = duration
+			end
+
+			local variant = library:Lerp(easeOptions, properties[property], target[property], nowTime / duration)
+			instance[property] = variant
+
+			nowTime += deltaTime
+		end
+
+		for K, _ in pairs(target) do
+			local function __main(deltaTime: number)
+				__tween(deltaTime, K)
+			end
+
+			local connection = runService.Heartbeat:Connect(__main)
+
+			self.threads[K] = connection
+		end
+	end
+	--#endregion
+	--#region // Resume
+	function object:Resume()
+		local status = self.status
+		local started = status.started
+
+		if not started then return end
+
+		self.status.yield = false
 	end
 	--#endregion
 	--#region // Start
 	function object:Start()
-		local info = self.info :: table
-		local status = self.status :: table
+		--#region // check
+		local status = self.status
+		local started = status.started
 
-		if status.started then
-			return
+		if started then return end
+
+		self.status.started = true
+		--#endregion
+		--#region // convert
+		local temp = {}
+
+		for K, V in pairs(target) do
+			K = tostring(K)
+
+			self.info.properties[K] = self.info.instance[K]
+			temp[K] = V
 		end
 
-		status.started = true
+		target = temp
+		--#endregion
+		local info = self.info
 
-		local easeOptions = info.easeOptions :: table
+		easeOptions = info.easeOptions
+		local duration = easeOptions[3]
+		local properties = info.properties
+
 		local nowTime = 0
 
-		local function tween(deltaTime: number)
-			if status.yield then
-				return
+		local function __tween(deltaTime: number, property: string)
+			nowTime = nowTime
+			status = self.status
+
+			if status.yield then return end
+
+			if nowTime > duration then
+				self.threads[property]:Disconnect()
+				nowTime = duration
 			end
 
-			status.running = true
+			local variant =
+				library:Lerp(easeOptions, properties[property], target[property], nowTime / easeOptions.duration)
+			instance[property] = variant
 
-			if nowTime > easeOptions.duration then
-				status.running = false
-				self.thread:Disconnect()
-				nowTime = easeOptions.duration :: number
-			end
-
-			info.instance[info.property] =
-				library:Lerp(easeOptions, info.value, info.target, nowTime / easeOptions.duration)
 			nowTime += deltaTime
 		end
 
-		self.funcs = tween
-		local connection = runService.Heartbeat:Connect(tween)
-		self.thread = connection :: RBXScriptConnection
+		for K, _ in pairs(target) do
+			local function __main(deltaTime: number)
+				__tween(deltaTime, K)
+			end
 
-		self.info = info
-		self.status = status
+			local connection = runService.Heartbeat:Connect(__main)
+
+			self.threads[K] = connection
+		end
 	end
 	--#endregion
 	--#region // Yield
 	function object:Yield()
-		local status = self.status :: table
+		local status = self.status
 
-		if not status.running then
-			return
-		end
+		if not status.started then return end
 
 		status.yield = true
 
@@ -163,4 +202,4 @@ function controller:Create(
 	return object
 end
 
-return freeze(controller)
+return controller
