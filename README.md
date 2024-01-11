@@ -68,7 +68,7 @@ library:Lerp(
 > 可以理解成当前支持插值的类型
 
 ```lua
-type positionType =
+type sourceType =
     CFrame
     | Color3
     | ColorSequenceKeypoint
@@ -88,7 +88,7 @@ type positionType =
 
 `A` 为起始点（你跑步的起点），`B` 为结束点（你要到达的终点），`schedule` 为插值进度（0 ~ 1 区间）
 
-但是 `A` 与 `B` 需符合 sourceType 定义，提交无效或尚未支持的类型会被驳回
+但是 `A` 与 `B` 需符合 `sourceType` 定义，提交无效或尚未支持的类型会被驳回
 
 最终将会返回一个相同类型的插值给你
 
@@ -153,7 +153,9 @@ tweenV:Create(
         duration: number?,
         extra: { amplitude: number?, period: number? }?
     }?,
-    target: table
+    target: table,
+    loop: number?,
+    reverse: boolean?
 ): table
 ```
 
@@ -177,6 +179,10 @@ target = {
 }
 ```
 
+`loop` 为该对象需循环多少次，`0` 为不循环，`-1` 为一直循环直到手动 `:Kill()`，可留空使用默认值
+
+`reverse` 为该对象是否需要往返，可留空使用默认值
+
 ---
 
 当调用之后会返回一个对象： 
@@ -184,13 +190,16 @@ target = {
 ```lua
 local object = controller:Create(...)
 
+object:Kill() -- 你直接给我坐下！
 object:Replay() -- one more time!
 object:Resume() -- 时间再次流动......
 object:Start() -- 函数，启动！
 object:Yield() -- 冻住，不许走！
 ```
 
-需要注意的是，`Replay()` 会打断当前并重新播放，在 `Start()` 之前无法调用
+`:Kill()` 会直接结束掉当前运行，若需要可以用 `:Replay()` 重新播放
+
+但需要注意的是，`:Replay()` 会打断当前并重新播放，在 `:Start()` 之前无法调用
 
 ---
 

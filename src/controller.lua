@@ -8,25 +8,9 @@
 
     Author // VoID(@Verycuteabbey)
     Contributor // ChinoHTea(@HarukaTea), smallpenguin666
-]]
---
+]]--
 
 --// defines
-type positionType =
-    CFrame
-    | Color3
-    | ColorSequenceKeypoint
-    | DateTime
-    | number
-    | NumberRange
-    | NumberSequenceKeypoint
-    | Ray
-    | Rect
-    | Region3
-    | UDim2
-    | Vector2
-    | Vector3
-
 local library = require(script.library)
 local runService = game:GetService("RunService")
 
@@ -41,7 +25,9 @@ function controller:Create(
         duration: number?,
         extra: { amplitude: number?, period: number? }?
     }?,
-    target: table
+    target: table,
+    loop: number?,
+    reverse: boolean?
 ): table
     --#region // default
     if not easeOptions then
@@ -55,6 +41,14 @@ function controller:Create(
     elseif not easeOptions[4] then
         easeOptions[4] = { amplitude = 1, period = 0.3 }
     end
+
+    if not loop then
+        loop = 0
+    end
+
+    if not reverse then
+        reverse = false
+    end
     --#endregion
     local object = {}
 
@@ -62,51 +56,103 @@ function controller:Create(
 
     object.info = {
         instance = instance,
+        loop = loop,
+        reverse = reverse,
         easeOptions = easeOptions,
         properties = {},
         target = target
     }
     object.status = {
+        killed = false,
+        looped = 0,
+        reversed = false,
         started = false,
-        yield = false
+        yielding = false
     }
+    --#region // Kill
+    function object:Kill()
+        local status = self.status
+        local started = status.started
+
+        if not started then return end
+
+        self.status.killed = true
+    end
+    --#endregion
     --#region // Replay
     function object:Replay()
         --#region // check
         local status = self.status
+        local started = status.started
 
-        if not status.started then return end
+        if not started then return end
 
-        status.yield = false
+        self.status = {
+            killed = false,
+            looped = 0,
+            reversed = false,
+            started = false,
+            yielding = false
+        }
 
-        self.status = status
+        self.status.started = true
         --#endregion
+        --#region // tween
         local info = self.info
-        local properties = info.properties
-        local threads = self.threads
+        local properties = self.properties
 
         easeOptions = info.easeOptions
+        local direction = easeOptions[2]
         local duration = easeOptions[3]
 
+        loop = info.loop
+        reverse = info.reverse
+
         local nowTime = 0
+        local temp: table
 
         local function __tween(deltaTime: number, property: string)
             nowTime = nowTime
             status = self.status
 
-            if status.yield then return end
+            if status.killed then self.threads[property]:Disconnect() end
+            if status.yielding then return end
 
             if nowTime > duration then
-                threads[property]:Disconnect()
-                nowTime = duration
+                if status.looped < loop or loop == -1 then
+                    self.status.looped += 1
+                    nowTime = 0
+                elseif reverse and not status.reversed then
+                    self.status.reversed = true
+
+                    temp = properties
+                    properties = target
+                    target = temp
+
+                    if direction == "In" then
+                        easeOptions[2] = "Out"
+                    elseif direction == "Out" then
+                        easeOptions[2] = "In"
+                    elseif direction == "InOut" then
+                        easeOptions[2] = "OutIn"
+                    elseif direction == "OutIn" then
+                        easeOptions[2] = "InOut"
+                    end
+
+                    nowTime = 0
+                else
+                    self.threads[property]:Disconnect()
+                    nowTime = duration
+                end
             end
 
-            local variant = library:Lerp(easeOptions, properties[property], target[property], nowTime / duration)
+            local variant =
+                library:Lerp(easeOptions, properties[property], target[property], nowTime / easeOptions.duration)
             instance[property] = variant
 
             nowTime += deltaTime
         end
-
+        --#endregion
         for K, _ in pairs(target) do
             local function __main(deltaTime: number)
                 __tween(deltaTime, K)
@@ -121,11 +167,13 @@ function controller:Create(
     --#region // Resume
     function object:Resume()
         local status = self.status
+        local killed = status.killed
         local started = status.started
 
         if not started then return end
+        if killed then return end
 
-        self.status.yield = false
+        self.status.yielding = false
     end
     --#endregion
     --#region // Start
@@ -150,11 +198,16 @@ function controller:Create(
 
         target = temp
         --#endregion
+        --#region // tween
         local info = self.info
+        local properties = self.properties
 
         easeOptions = info.easeOptions
+        local direction = easeOptions[2]
         local duration = easeOptions[3]
-        local properties = info.properties
+
+        loop = info.loop
+        reverse = info.reverse
 
         local nowTime = 0
 
@@ -162,11 +215,35 @@ function controller:Create(
             nowTime = nowTime
             status = self.status
 
-            if status.yield then return end
+            if status.killed then self.threads[property]:Disconnect() end
+            if status.yielding then return end
 
             if nowTime > duration then
-                self.threads[property]:Disconnect()
-                nowTime = duration
+                if status.looped < loop or loop == -1 then
+                    self.status.looped += 1
+                    nowTime = 0
+                elseif reverse and not status.reversed then
+                    self.status.reversed = true
+
+                    temp = properties
+                    properties = target
+                    target = temp
+
+                    if direction == "In" then
+                        easeOptions[2] = "Out"
+                    elseif direction == "Out" then
+                        easeOptions[2] = "In"
+                    elseif direction == "InOut" then
+                        easeOptions[2] = "OutIn"
+                    elseif direction == "OutIn" then
+                        easeOptions[2] = "InOut"
+                    end
+
+                    nowTime = 0
+                else
+                    self.threads[property]:Disconnect()
+                    nowTime = duration
+                end
             end
 
             local variant =
@@ -175,7 +252,7 @@ function controller:Create(
 
             nowTime += deltaTime
         end
-
+        --#endregion
         for K, _ in pairs(target) do
             local function __main(deltaTime: number)
                 __tween(deltaTime, K)
@@ -190,12 +267,13 @@ function controller:Create(
     --#region // Yield
     function object:Yield()
         local status = self.status
+        local killed = status.killed
+        local started = status.started
 
-        if not status.started then return end
+        if not started then return end
+        if killed then return end
 
-        status.yield = true
-
-        self.status = status
+        self.status.yielding = true
     end
     --#endregion
     return object
