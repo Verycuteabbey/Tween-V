@@ -8,8 +8,7 @@
 
     Author // VoID(@Verycuteabbey)
     Contributor // ChinoHTea(@HarukaTea), smallpenguin666
-]]
---
+]]--
 
 --// defines
 local asin, cos, pi, sin, sqrt = math.asin, math.cos, math.pi, math.sin, math.sqrt
@@ -257,8 +256,8 @@ function library:Lerp(
     local style, direction, extra = easeOptions[1], easeOptions[2], easeOptions[3]
     local amplitude, period = extra.amplitude, extra.period
 
-    local variant1 = if typeof(style) == "Enum" then match(style, "^Enum.EasingStyle%.([^-]+)$") else style
-    local variant2 = if typeof(direction) == "Enum" then match(direction, "^Enum.EasingDirection%.([^-]+)$") else direction
+    local variant1 = if typeof(style) == "Enum" then match(tostring(style), "^Enum.EasingStyle%.([^-]+)$") else style
+    local variant2 = if typeof(direction) == "Enum" then match(tostring(direction), "^Enum.EasingDirection%.([^-]+)$") else direction
 
     local alpha = map[variant2](map[variant1], schedule, amplitude, period)
 
