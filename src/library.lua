@@ -245,11 +245,14 @@ function library:Lerp(
     --#region // default
     if not easeOptions then
         easeOptions = { Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, { amplitude = 1, period = 0.3 } }
-    elseif not easeOptions[1] then
+    end
+    if not easeOptions[1] then
         easeOptions[1] = Enum.EasingStyle.Linear
-    elseif not easeOptions[2] then
+    end
+    if not easeOptions[2] then
         easeOptions[2] = Enum.EasingDirection.InOut
-    elseif not easeOptions[3] then
+    end
+    if not easeOptions[3] then
         easeOptions[3] = { amplitude = 1, period = 0.3 }
     end
     --#endregion

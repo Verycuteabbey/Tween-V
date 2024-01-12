@@ -32,20 +32,22 @@ function controller:Create(
     --#region // default
     if not easeOptions then
         easeOptions = { Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 1, { amplitude = 1, period = 0.3 }}
-    elseif not easeOptions[1] then
+    end
+    if not easeOptions[1] then
         easeOptions[1] = Enum.EasingStyle.Linear
-    elseif not easeOptions[2] then
+    end
+    if not easeOptions[2] then
         easeOptions[2] = Enum.EasingDirection.InOut
-    elseif not easeOptions[3] then
+    end
+    if not easeOptions[3] then
         easeOptions[3] = 1
-    elseif not easeOptions[4] then
+    end
+    if not easeOptions[4] then
         easeOptions[4] = { amplitude = 1, period = 0.3 }
     end
-
     if not loop then
         loop = 0
     end
-
     if not reverse then
         reverse = false
     end
@@ -102,14 +104,12 @@ function controller:Create(
         local properties = self.properties
 
         easeOptions = info.easeOptions
-        local direction = easeOptions[2]
-        local duration = easeOptions[3]
+       local duration = easeOptions[3]
 
         loop = info.loop
         reverse = info.reverse
 
         local nowTime = 0
-        local temp: table
 
         local function __tween(deltaTime: number, property: string)
             nowTime = nowTime
@@ -125,19 +125,10 @@ function controller:Create(
                 elseif reverse and not status.reversed then
                     self.status.reversed = true
 
-                    temp = properties
-                    properties = target
-                    target = temp
+                    local copy1, copy2 = properties, target
 
-                    if direction == "In" then
-                        easeOptions[2] = "Out"
-                    elseif direction == "Out" then
-                        easeOptions[2] = "In"
-                    elseif direction == "InOut" then
-                        easeOptions[2] = "OutIn"
-                    elseif direction == "OutIn" then
-                        easeOptions[2] = "InOut"
-                    end
+                    properties = copy2
+                    target = copy1
 
                     nowTime = 0
                 else
@@ -148,8 +139,8 @@ function controller:Create(
 
             local variant =
                 library:Lerp(easeOptions, properties[property], target[property], nowTime / easeOptions.duration)
-            instance[property] = variant
 
+            instance[property] = variant
             nowTime += deltaTime
         end
         --#endregion
@@ -203,7 +194,6 @@ function controller:Create(
         local properties = self.properties
 
         easeOptions = info.easeOptions
-        local direction = easeOptions[2]
         local duration = easeOptions[3]
 
         loop = info.loop
@@ -225,19 +215,10 @@ function controller:Create(
                 elseif reverse and not status.reversed then
                     self.status.reversed = true
 
-                    temp = properties
-                    properties = target
-                    target = temp
+                    local copy1, copy2 = properties, target
 
-                    if direction == "In" then
-                        easeOptions[2] = "Out"
-                    elseif direction == "Out" then
-                        easeOptions[2] = "In"
-                    elseif direction == "InOut" then
-                        easeOptions[2] = "OutIn"
-                    elseif direction == "OutIn" then
-                        easeOptions[2] = "InOut"
-                    end
+                    properties = copy2
+                    target = copy1
 
                     nowTime = 0
                 else
@@ -248,8 +229,8 @@ function controller:Create(
 
             local variant =
                 library:Lerp(easeOptions, properties[property], target[property], nowTime / easeOptions.duration)
-            instance[property] = variant
 
+            instance[property] = variant
             nowTime += deltaTime
         end
         --#endregion
