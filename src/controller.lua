@@ -11,6 +11,9 @@
 ]]--
 
 --// defines
+local create = table.create
+local delay = task.delay
+
 local library = require(script.library)
 local runService = game:GetService("RunService")
 
@@ -20,49 +23,27 @@ local controller = {}
 function controller:Create(
     instance: Instance,
     easeOptions: {
-        style: Enum.EasingStyle | string?,
-        direction: Enum.EasingDirection | string?,
+        style: string | Enum.EasingStyle?,
+        direction: string | Enum.EasingDirection?,
         duration: number?,
         extra: { amplitude: number?, period: number? }?
     }?,
-    target: table,
-    loop: number?,
-    reverse: boolean?
+    target: table
 ): table
-    --#region // default
-    if not easeOptions then
-        easeOptions = { Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 1, { amplitude = 1, period = 0.3 }}
-    end
-    if not easeOptions[1] then
-        easeOptions[1] = Enum.EasingStyle.Linear
-    end
-    if not easeOptions[2] then
-        easeOptions[2] = Enum.EasingDirection.InOut
-    end
-    if not easeOptions[3] then
-        easeOptions[3] = 1
-    end
-    if not easeOptions[4] then
-        easeOptions[4] = { amplitude = 1, period = 0.3 }
-    end
-    if not loop then
-        loop = 0
-    end
-    if not reverse then
-        reverse = false
-    end
-    --#endregion
+    --#region // init
+    easeOptions = easeOptions or { "Linear", "InOut", 1, { amplitude = 1, period = 0.3 }}
+    easeOptions[1] = easeOptions[1] or "Linear"
+    easeOptions[2] = easeOptions[2] or "InOut"
+    easeOptions[3] = easeOptions[3] or 1
+    easeOptions[4] = easeOptions[4] or { amplitude = 1, period = 0.3 }
+
     local object = {}
-
     object.threads = {}
-
     object.info = {
-        instance = instance,
-        loop = loop,
-        reverse = reverse,
-        easeOptions = easeOptions,
-        properties = {},
-        target = target
+        _delay = nil,
+        _repeat = nil,
+        properties = nil,
+        reverse = nil
     }
     object.status = {
         killed = false,
@@ -71,7 +52,8 @@ function controller:Create(
         started = false,
         yielding = false
     }
-    --#region // Kill
+    --#endregion
+    --#region // function - Kill()
     function object:Kill()
         local status = self.status
         local started = status.started
@@ -81,9 +63,9 @@ function controller:Create(
         self.status.killed = true
     end
     --#endregion
-    --#region // Replay
-    function object:Replay()
-        --#region // check
+    --#region // function - Replay(_delay: number?, _repeat: number?, reverse: boolean?)
+    function object:Replay(_delay: number?, _repeat: number?, reverse: boolean?)
+        --#region // init
         local status = self.status
         local started = status.started
 
@@ -98,16 +80,20 @@ function controller:Create(
         }
 
         self.status.started = true
+
+        local info = self.info
+
+        _delay = _delay or info._delay
+        _repeat = _repeat or info._repeat
+        reverse = reverse or info.reverse
+
+        self.info._delay = _delay
+        self.info._repeat = _repeat
+        self.info.reverse = reverse
         --#endregion
         --#region // tween
-        local info = self.info
-        local properties = self.properties
-
-        easeOptions = info.easeOptions
-       local duration = easeOptions[3]
-
-        loop = info.loop
-        reverse = info.reverse
+        local properties = info.properties
+        local duration = easeOptions[3]
 
         local nowTime = 0
 
@@ -119,16 +105,15 @@ function controller:Create(
             if status.yielding then return end
 
             if nowTime > duration then
-                if status.looped < loop or loop == -1 then
+                if status.looped < _repeat or _repeat == -1 then
                     self.status.looped += 1
                     nowTime = 0
                 elseif reverse and not status.reversed then
                     self.status.reversed = true
 
-                    local copy1, copy2 = properties, target
-
-                    properties = copy2
-                    target = copy1
+                    local temp = properties
+                    properties = target
+                    target = temp
 
                     nowTime = 0
                 else
@@ -138,24 +123,23 @@ function controller:Create(
             end
 
             local variant =
-                library:Lerp(easeOptions, properties[property], target[property], nowTime / easeOptions.duration)
+                library:Lerp(easeOptions, properties[property], target[property], nowTime / duration)
 
             instance[property] = variant
             nowTime += deltaTime
         end
         --#endregion
-        for K, _ in pairs(target) do
-            local function __main(deltaTime: number)
-                __tween(deltaTime, K)
+        delay(_delay, function()
+            for K, _ in pairs(target) do
+                local function __main(deltaTime: number) __tween(deltaTime, K) end
+                local connection = runService.Heartbeat:Connect(__main)
+
+                self.threads[K] = connection
             end
-
-            local connection = runService.Heartbeat:Connect(__main)
-
-            self.threads[K] = connection
-        end
+        end)
     end
     --#endregion
-    --#region // Resume
+    --#region // function - Resume()
     function object:Resume()
         local status = self.status
         local killed = status.killed
@@ -167,37 +151,42 @@ function controller:Create(
         self.status.yielding = false
     end
     --#endregion
-    --#region // Start
-    function object:Start()
-        --#region // check
+    --#region // function - Start(_delay: number?, _repeat: number?, reverse: boolean?)
+    function object:Start(_delay: number?, _repeat: number?, reverse: boolean?)
+        --#region // init
         local status = self.status
         local started = status.started
 
         if started then return end
 
         self.status.started = true
-        --#endregion
-        --#region // convert
-        local temp = {}
+
+        _delay = _delay or 0
+        _repeat = _repeat or 0
+        reverse = reverse or false
+
+        self.info._delay = _delay
+        self.info._repeat = _repeat
+        self.info.reverse = reverse
+
+        local _table = create(#target)
+        local newProperties, newTarget = _table, _table
 
         for K, V in pairs(target) do
             K = tostring(K)
 
-            self.info.properties[K] = self.info.instance[K]
-            temp[K] = V
+            newProperties[K] = instance[K]
+            newTarget[K] = V
         end
 
-        target = temp
+        target = newTarget
+
+        self.info.properties = newProperties
         --#endregion
         --#region // tween
         local info = self.info
-        local properties = self.properties
-
-        easeOptions = info.easeOptions
+        local properties = info.properties
         local duration = easeOptions[3]
-
-        loop = info.loop
-        reverse = info.reverse
 
         local nowTime = 0
 
@@ -209,16 +198,15 @@ function controller:Create(
             if status.yielding then return end
 
             if nowTime > duration then
-                if status.looped < loop or loop == -1 then
+                if status.looped < _repeat or _repeat == -1 then
                     self.status.looped += 1
                     nowTime = 0
                 elseif reverse and not status.reversed then
                     self.status.reversed = true
 
-                    local copy1, copy2 = properties, target
-
-                    properties = copy2
-                    target = copy1
+                    local temp = properties
+                    properties = target
+                    target = temp
 
                     nowTime = 0
                 else
@@ -228,24 +216,23 @@ function controller:Create(
             end
 
             local variant =
-                library:Lerp(easeOptions, properties[property], target[property], nowTime / easeOptions.duration)
+                library:Lerp(easeOptions, properties[property], target[property], nowTime / duration)
 
             instance[property] = variant
             nowTime += deltaTime
         end
         --#endregion
-        for K, _ in pairs(target) do
-            local function __main(deltaTime: number)
-                __tween(deltaTime, K)
+        delay(_delay, function()
+            for K, _ in pairs(target) do
+                local function __main(deltaTime: number) __tween(deltaTime, K) end
+                local connection = runService.Heartbeat:Connect(__main)
+
+                self.threads[K] = connection
             end
-
-            local connection = runService.Heartbeat:Connect(__main)
-
-            self.threads[K] = connection
-        end
+        end)
     end
     --#endregion
-    --#region // Yield
+    --#region // function - Yield()
     function object:Yield()
         local status = self.status
         local killed = status.killed
