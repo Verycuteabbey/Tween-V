@@ -31,8 +31,8 @@ local library = require(path.to.library) -- 记得换成自己存放的路径
 
 library:Lerp(
     easeOptions: {
-        style: Enum.EasingStyle | string?,
-        direction: Enum.EasingDirection | string?,
+        style: string | Enum.EasingStyle?,
+        direction: string | Enum.EasingDirection?,
         extra: { amplitude: number?, period: number? }?
     }?,
     A: sourceType,
@@ -148,14 +148,12 @@ local tweenV = require(script.library)
 tweenV:Create(
     instance: Instance,
     easeOptions: {
-        style: Enum.EasingStyle | string?,
-        direction: Enum.EasingDirection | string?,
+        style: string | Enum.EasingStyle?,
+        direction: string | Enum.EasingDirection?,
         duration: number?,
         extra: { amplitude: number?, period: number? }?
     }?,
-    target: table,
-    loop: number?,
-    reverse: boolean?
+    target: table
 ): table
 ```
 
@@ -179,7 +177,7 @@ target = {
 }
 ```
 
-`loop` 为该对象需循环多少次，`0` 为不循环，`-1` 为一直循环直到手动 `:Kill()`，可留空使用默认值
+`loop` 为该对象需循环多少次，`0` 为不循环，`-1` 为一直循环直到手动 `Kill()`，可留空使用默认值
 
 `reverse` 为该对象是否需要往返，可留空使用默认值
 
@@ -191,15 +189,25 @@ target = {
 local object = controller:Create(...)
 
 object:Kill() -- 你直接给我坐下！
-object:Replay() -- one more time!
+object:Replay(_delay: number?, _repeat: number?, reverse: boolean?) -- one more time!
 object:Resume() -- 时间再次流动......
-object:Start() -- 函数，启动！
+object:Start(_delay: number?, _repeat: number?, reverse: boolean?) -- 函数，启动！
 object:Yield() -- 冻住，不许走！
 ```
 
-`:Kill()` 会直接结束掉当前运行，若需要可以用 `:Replay()` 重新播放
+`Start()` 与 `Replay()` 支持延迟播放、循环播放以及往返
 
-但需要注意的是，`:Replay()` 会打断当前并重新播放，在 `:Start()` 之前无法调用
+- 当 `_delay` > `0` 时, 将会等待相应秒数后再开始
+- 当 `_repeat` > `0` 时, 将会循环播放相应次数，当其为 `0` 时则不循环，当其为 `-1` 时则无限循环
+- 当 `reverse` 为 `true` 时，将会在 tween 到达终点后再回去
+
+可留空或填写 `nil` 使用 Controller 默认值
+
+`Kill()` 直接结束掉当前运行，若需要可以用 `Replay()` 重新播放
+
+`Resume()` 重新启动被冻结的 tween
+
+`Yield()` 冻结当前 tween 进度
 
 ---
 
@@ -211,4 +219,4 @@ object:Yield() -- 冻住，不许走！
 
 但说真的，比起各位开发者我其实是个 fw 来的（真）
 
-**MIT License @ 2023 The Mystery Team // Verycuteabbey**
+**MIT License @ 2024 The Mystery Team // Verycuteabbey**
