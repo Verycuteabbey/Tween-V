@@ -40,7 +40,6 @@ type sourceType =
     | Vector3
 
 local library = {}
-
 --#region // style
 local function __linear(schedule: number): number return schedule end
 local function __quad(schedule: number): number return schedule * schedule end
@@ -197,7 +196,6 @@ local function __region3(A: Region3, B: Region3, alpha: number): Region3
     return newRegion3(position - halfSize, position + halfSize)
 end
 --#endregion
-
 local map = {
     ["Linear"] = __linear,
     ["Quad"] = __quad,
@@ -234,37 +232,28 @@ local map = {
 --// functions
 function library:Lerp(
     easeOptions: {
-        style: Enum.EasingStyle | string?,
-        direction: Enum.EasingDirection | string?,
+        style: string | Enum.EasingStyle?,
+        direction: string | Enum.EasingDirection?,
         extra: { amplitude: number?, period: number? }?
     }?,
     A: sourceType,
     B: sourceType,
     schedule: number
 ): sourceType | nil
-    --#region // default
-    if not easeOptions then
-        easeOptions = { Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, { amplitude = 1, period = 0.3 } }
-    end
-    if not easeOptions[1] then
-        easeOptions[1] = Enum.EasingStyle.Linear
-    end
-    if not easeOptions[2] then
-        easeOptions[2] = Enum.EasingDirection.InOut
-    end
-    if not easeOptions[3] then
-        easeOptions[3] = { amplitude = 1, period = 0.3 }
-    end
+    --#region // init
+    easeOptions = easeOptions or { "Linear", "InOut", 1, { amplitude = 1, period = 0.3 }}
+    easeOptions[1] = easeOptions[1] or "Linear"
+    easeOptions[2] = easeOptions[2] or "InOut"
+    easeOptions[3] = easeOptions[3] or { amplitude = 1, period = 0.3 }
     --#endregion
     local style, direction, extra = easeOptions[1], easeOptions[2], easeOptions[3]
     local amplitude, period = extra.amplitude, extra.period
+    local typeA, typeB = typeof(A), typeof(B)
 
     local variant1 = if typeof(style) == "Enum" then match(tostring(style), "^Enum.EasingStyle%.([^-]+)$") else style
     local variant2 = if typeof(direction) == "Enum" then match(tostring(direction), "^Enum.EasingDirection%.([^-]+)$") else direction
 
     local alpha = map[variant2](map[variant1], schedule, amplitude, period)
-
-    local typeA, typeB = typeof(A), typeof(B)
 
     if typeA ~= typeB then return end
 
