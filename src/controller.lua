@@ -3,7 +3,7 @@
 --[[
     Tween-V // The next generation of "VCA's Tween"
 
-    A contoller for main
+    A controller for main
 
 
     Author // VoID(@Verycuteabbey)
@@ -31,11 +31,11 @@ function controller:Create(
     target: table
 ): table
     --#region // init
-    easeOptions = easeOptions or { "Linear", "InOut", 1, { amplitude = 1, period = 0.3 }}
-    easeOptions[1] = easeOptions[1] or "Linear"
-    easeOptions[2] = easeOptions[2] or "InOut"
-    easeOptions[3] = easeOptions[3] or 1
-    easeOptions[4] = easeOptions[4] or { amplitude = 1, period = 0.3 }
+    easeOptions = easeOptions or { style = "Linear", direction = "InOut", duration = 1, extra = { amplitude = 1, period = 0.3 }}
+    easeOptions.style = easeOptions.style or "Linear"
+    easeOptions.direction = easeOptions.direction or "InOut"
+    easeOptions.duration = easeOptions.duration or 1
+    easeOptions.extra = easeOptions.extra or { amplitude = 1, period = 0.3 }
 
     local object = {}
     object.threads = {}
@@ -93,7 +93,7 @@ function controller:Create(
         --#endregion
         --#region // tween
         local properties = info.properties
-        local duration = easeOptions[3]
+        local duration = easeOptions.duration
 
         local nowTime = 0
 
@@ -186,7 +186,7 @@ function controller:Create(
         --#region // tween
         local info = self.info
         local properties = info.properties
-        local duration = easeOptions[3]
+        local duration = easeOptions.duration
 
         local nowTime = 0
 

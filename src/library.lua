@@ -241,12 +241,12 @@ function library:Lerp(
     schedule: number
 ): sourceType | nil
     --#region // init
-    easeOptions = easeOptions or { "Linear", "InOut", 1, { amplitude = 1, period = 0.3 }}
-    easeOptions[1] = easeOptions[1] or "Linear"
-    easeOptions[2] = easeOptions[2] or "InOut"
-    easeOptions[3] = easeOptions[3] or { amplitude = 1, period = 0.3 }
+    easeOptions = easeOptions or { style = "Linear", direction = "InOut", extra = { amplitude = 1, period = 0.3 }}
+    easeOptions.style = easeOptions.style or "Linear"
+    easeOptions.direction = easeOptions.direction or "InOut"
+    easeOptions.extra = easeOptions.extra or { amplitude = 1, period = 0.3 }
     --#endregion
-    local style, direction, extra = easeOptions[1], easeOptions[2], easeOptions[3]
+    local style, direction, extra = easeOptions.style, easeOptions.direction, easeOptions.extra
     local amplitude, period = extra.amplitude, extra.period
     local typeA, typeB = typeof(A), typeof(B)
 

@@ -106,7 +106,7 @@ type sourceType =
 local library = require(path.to.library) -- 记得换成自己存放的路径
 
 local result = library:Lerp(
-    { "Quad", "Out" },
+    { style = "Quad", direction = "Out" },
     Vector3.new(0, 0, 0),
     Vector3.new(10, 10, 10),
     0.5
@@ -119,7 +119,7 @@ print(result)
 
 ```lua
 local result = library:Lerp(
-    { Enum.EasingStyle.Quad, Enum.EasingDirection.Out },
+    { style = Enum.EasingStyle.Quad, direction = Enum.EasingDirection.Out },
     Vector3.new(0, 0, 0),
     Vector3.new(10, 10, 10),
     0.5
