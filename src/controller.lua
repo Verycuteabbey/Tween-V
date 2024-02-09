@@ -11,13 +11,16 @@
 ]]--
 
 --// defines
+local runService = game:GetService("RunService")
+
+local clear = table.clear
 local create = table.create
 local delay = task.delay
 
-local library = require(script.library)
-local runService = game:GetService("RunService")
-
 local controller = {}
+
+--// libraries
+local library = require(script.Parent.Library)
 
 --// functions
 function controller:Create(
@@ -38,12 +41,12 @@ function controller:Create(
     easeOptions.extra = easeOptions.extra or { amplitude = 1, period = 0.3 }
 
     local object = {}
-    object.threads = {}
+    object.threads = create(#target)
     object.info = {
         _delay = nil,
         _repeat = nil,
-        properties = nil,
-        reverse = nil
+        reverse = nil,
+        properties = {}
     }
     object.status = {
         killed = false,
@@ -60,7 +63,7 @@ function controller:Create(
 
         if not started then return end
 
-        self.status.killed = true
+        status.killed = true
     end
     --#endregion
     --#region // function - Replay(_delay: number?, _repeat: number?, reverse: boolean?)
@@ -75,25 +78,26 @@ function controller:Create(
             killed = false,
             looped = 0,
             reversed = false,
-            started = false,
+            started = true,
             yielding = false
         }
 
-        self.status.started = true
-
         local info = self.info
+        local properties = info.properties
 
         _delay = _delay or info._delay
         _repeat = _repeat or info._repeat
         reverse = reverse or info.reverse
+        info._delay = _delay
+        info._repeat = _repeat
+        info.reverse = reverse
 
-        self.info._delay = _delay
-        self.info._repeat = _repeat
-        self.info.reverse = reverse
+        properties.now = properties.backup
+        target.now = target.backup
         --#endregion
         --#region // tween
-        local properties = info.properties
         local duration = easeOptions.duration
+        local threads = self.threads
 
         local nowTime = 0
 
@@ -101,40 +105,48 @@ function controller:Create(
             nowTime = nowTime
             status = self.status
 
-            if status.killed then self.threads[property]:Disconnect() end
+            if status.killed or not instance then threads[property]:Disconnect() end
             if status.yielding then return end
 
             if nowTime > duration then
-                if status.looped < _repeat or _repeat == -1 then
-                    self.status.looped += 1
-                    nowTime = 0
-                elseif reverse and not status.reversed then
-                    self.status.reversed = true
+                if reverse and not status.reversed then
+                    status.reversed = true
 
-                    local temp = properties
-                    properties = target
-                    target = temp
+                    local temp = properties.now
+                    properties.now = target.now
+                    target.now = temp
+
+                    nowTime = 0
+                elseif status.looped < _repeat or _repeat == -1 then
+                    status.looped += 1
+
+                    if status.reversed then
+                        status.reversed = false
+
+                        properties.now = properties.backup
+                        target.now = target.backup
+                    end
 
                     nowTime = 0
                 else
-                    self.threads[property]:Disconnect()
+                    threads[property]:Disconnect()
                     nowTime = duration
                 end
             end
 
             local variant =
-                library:Lerp(easeOptions, properties[property], target[property], nowTime / duration)
+                library:Lerp(easeOptions, properties.now[property], target.now[property], nowTime / duration)
 
             instance[property] = variant
             nowTime += deltaTime
         end
         --#endregion
         delay(_delay, function()
-            for K, _ in pairs(target) do
+            for K, _ in pairs(target.now) do
                 local function __main(deltaTime: number) __tween(deltaTime, K) end
                 local connection = runService.Heartbeat:Connect(__main)
 
-                self.threads[K] = connection
+                threads[K] = connection
             end
         end)
     end
@@ -148,29 +160,28 @@ function controller:Create(
         if not started then return end
         if killed then return end
 
-        self.status.yielding = false
+        status.yielding = false
     end
     --#endregion
     --#region // function - Start(_delay: number?, _repeat: number?, reverse: boolean?)
     function object:Start(_delay: number?, _repeat: number?, reverse: boolean?)
         --#region // init
+        local info = self.info
         local status = self.status
         local started = status.started
 
         if started then return end
 
-        self.status.started = true
+        status.started = true
 
         _delay = _delay or 0
         _repeat = _repeat or 0
         reverse = reverse or false
+        info._delay = _delay
+        info._repeat = _repeat
+        info.reverse = reverse
 
-        self.info._delay = _delay
-        self.info._repeat = _repeat
-        self.info.reverse = reverse
-
-        local _table = create(#target)
-        local newProperties, newTarget = _table, _table
+        local newProperties, newTarget = create(#target), create(#target)
 
         for K, V in pairs(target) do
             K = tostring(K)
@@ -179,14 +190,17 @@ function controller:Create(
             newTarget[K] = V
         end
 
-        target = newTarget
+        clear(target)
+        target.backup = newTarget
+        target.now = newTarget
 
-        self.info.properties = newProperties
+        info.properties.backup = newProperties
+        info.properties.now = newProperties
         --#endregion
         --#region // tween
-        local info = self.info
-        local properties = info.properties
         local duration = easeOptions.duration
+        local properties = info.properties
+        local threads = self.threads
 
         local nowTime = 0
 
@@ -194,40 +208,48 @@ function controller:Create(
             nowTime = nowTime
             status = self.status
 
-            if status.killed then self.threads[property]:Disconnect() end
+            if status.killed or not instance then threads[property]:Disconnect() end
             if status.yielding then return end
 
             if nowTime > duration then
-                if status.looped < _repeat or _repeat == -1 then
-                    self.status.looped += 1
-                    nowTime = 0
-                elseif reverse and not status.reversed then
-                    self.status.reversed = true
+                if reverse and not status.reversed then
+                    status.reversed = true
 
-                    local temp = properties
-                    properties = target
-                    target = temp
+                    local temp = properties.now
+                    properties.now = target.now
+                    target.now = temp
+
+                    nowTime = 0
+                elseif status.looped < _repeat or _repeat == -1 then
+                    status.looped += 1
+
+                    if status.reversed then
+                        status.reversed = false
+
+                        properties.now = properties.backup
+                        target.now = target.backup
+                    end
 
                     nowTime = 0
                 else
-                    self.threads[property]:Disconnect()
+                    threads[property]:Disconnect()
                     nowTime = duration
                 end
             end
 
             local variant =
-                library:Lerp(easeOptions, properties[property], target[property], nowTime / duration)
+                library:Lerp(easeOptions, properties.now[property], target.now[property], nowTime / duration)
 
             instance[property] = variant
             nowTime += deltaTime
         end
         --#endregion
         delay(_delay, function()
-            for K, _ in pairs(target) do
+            for K, _ in pairs(target.now) do
                 local function __main(deltaTime: number) __tween(deltaTime, K) end
                 local connection = runService.Heartbeat:Connect(__main)
 
-                self.threads[K] = connection
+                threads[K] = connection
             end
         end)
     end
@@ -241,7 +263,7 @@ function controller:Create(
         if not started then return end
         if killed then return end
 
-        self.status.yielding = true
+        status.yielding = true
     end
     --#endregion
     return object
