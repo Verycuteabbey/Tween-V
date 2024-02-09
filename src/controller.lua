@@ -59,14 +59,16 @@ function controller:Create(
         yielding = false
     }
     --#endregion
-    --#region // function - Kill()
-    function object:Kill()
+    --#region // function - Kill(_delay: number?)
+    function object:Kill(_delay: number?)
         local status = self.status
         local started = status.started
 
         if not started then return end
 
-        status.killed = true
+        delay(_delay, function()
+            status.killed = true
+        end)
     end
     --#endregion
     --#region // function - Replay(_delay: number?, _repeat: number?, reverse: boolean?)
@@ -154,8 +156,8 @@ function controller:Create(
         end)
     end
     --#endregion
-    --#region // function - Resume()
-    function object:Resume()
+    --#region // function - Resume(_delay: number?)
+    function object:Resume(_delay: number?)
         local status = self.status
         local killed = status.killed
         local started = status.started
@@ -163,7 +165,9 @@ function controller:Create(
         if not started then return end
         if killed then return end
 
-        status.yielding = false
+        delay(_delay, function()
+            status.yielding = false
+        end)
     end
     --#endregion
     --#region // function - Start(_delay: number?, _repeat: number?, reverse: boolean?)
@@ -257,8 +261,8 @@ function controller:Create(
         end)
     end
     --#endregion
-    --#region // function - Yield()
-    function object:Yield()
+    --#region // function - Yield(_delay: number?)
+    function object:Yield(_delay: number?)
         local status = self.status
         local killed = status.killed
         local started = status.started
@@ -266,7 +270,9 @@ function controller:Create(
         if not started then return end
         if killed then return end
 
-        status.yielding = true
+        delay(_delay, function()
+            status.yielding = true
+        end)
     end
     --#endregion
     return object

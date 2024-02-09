@@ -153,7 +153,8 @@ tweenV:Create(
         duration: number?,
         extra: { amplitude: number?, period: number? }?
     }?,
-    target: table
+    target: table,
+    schedule: number?
 ): table
 ```
 
@@ -177,6 +178,8 @@ target = {
 }
 ```
 
+`schedule` 为起始进度，用 0 - 1 区间表示（可视为百分比例如 50/100 为 50%）
+
 ---
 
 当调用之后会返回一个对象： 
@@ -184,11 +187,11 @@ target = {
 ```lua
 local object = controller:Create(...)
 
-object:Kill() -- 你直接给我坐下！
+object:Kill(_delay: number?) -- 你直接给我坐下！
 object:Replay(_delay: number?, _repeat: number?, reverse: boolean?) -- one more time!
-object:Resume() -- 时间再次流动......
+object:Resume(_delay: number?) -- 时间再次流动......
 object:Start(_delay: number?, _repeat: number?, reverse: boolean?) -- 函数，启动！
-object:Yield() -- 冻住，不许走！
+object:Yield(_delay: number?) -- 冻住，不许走！
 ```
 
 `Start()` 与 `Replay()` 支持延迟播放、循环播放以及往返
@@ -197,13 +200,15 @@ object:Yield() -- 冻住，不许走！
 - 当 `_repeat` > `0` 时, 将会循环播放相应次数，当其为 `0` 时则不循环，当其为 `-1` 时则无限循环
 - 当 `reverse` 为 `true` 时，将会在 tween 到达终点后再回去
 
-可留空或填写 `nil` 使用 Controller 默认值
+可留空或填写 `nil` 使用 Controller 默认值，**`Replay()` 的参数支持直接继承 `Start()` 时的内容**
 
-`Kill()` 直接结束掉当前运行，若需要可以用 `Replay()` 重新播放
+**`Replay()` 皆可强制打断当前所有进行时，使其以提交的参数重新播放**
 
-`Resume()` 重新启动被冻结的 tween
+`Kill()` 直接结束掉当前运行， `_delay` 可定义延迟时间
 
-`Yield()` 冻结当前 tween 进度
+`Resume()` 重新启动被冻结的 tween, `_delay` 可定义延迟时间
+
+`Yield()` 冻结当前 tween 进度， `_delay` 可定义延迟时间
 
 ---
 
