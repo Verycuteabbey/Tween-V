@@ -40,6 +40,7 @@ type sourceType =
     | Vector3
 
 local library = {}
+
 --#region // style
 local function __linear(schedule: number): number return schedule end
 local function __quad(schedule: number): number return schedule * schedule end
