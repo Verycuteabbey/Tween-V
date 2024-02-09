@@ -31,7 +31,8 @@ function controller:Create(
         duration: number?,
         extra: { amplitude: number?, period: number? }?
     }?,
-    target: table
+    target: table,
+    schedule: number?
 ): table
     --#region // init
     easeOptions = easeOptions or { style = "Linear", direction = "InOut", duration = 1, extra = { amplitude = 1, period = 0.3 }}
@@ -39,6 +40,8 @@ function controller:Create(
     easeOptions.direction = easeOptions.direction or "InOut"
     easeOptions.duration = easeOptions.duration or 1
     easeOptions.extra = easeOptions.extra or { amplitude = 1, period = 0.3 }
+
+    schedule = schedule or 0
 
     local object = {}
     object.threads = create(#target)
@@ -99,7 +102,7 @@ function controller:Create(
         local duration = easeOptions.duration
         local threads = self.threads
 
-        local nowTime = 0
+        local nowTime = schedule
 
         local function __tween(deltaTime: number, property: string)
             nowTime = nowTime
@@ -116,7 +119,7 @@ function controller:Create(
                     properties.now = target.now
                     target.now = temp
 
-                    nowTime = 0
+                    nowTime = schedule
                 elseif status.looped < _repeat or _repeat == -1 then
                     status.looped += 1
 
@@ -127,7 +130,7 @@ function controller:Create(
                         target.now = target.backup
                     end
 
-                    nowTime = 0
+                    nowTime = schedule
                 else
                     threads[property]:Disconnect()
                     nowTime = duration
@@ -202,7 +205,7 @@ function controller:Create(
         local properties = info.properties
         local threads = self.threads
 
-        local nowTime = 0
+        local nowTime = schedule
 
         local function __tween(deltaTime: number, property: string)
             nowTime = nowTime
@@ -219,7 +222,7 @@ function controller:Create(
                     properties.now = target.now
                     target.now = temp
 
-                    nowTime = 0
+                    nowTime = schedule
                 elseif status.looped < _repeat or _repeat == -1 then
                     status.looped += 1
 
@@ -230,7 +233,7 @@ function controller:Create(
                         target.now = target.backup
                     end
 
-                    nowTime = 0
+                    nowTime = schedule
                 else
                     threads[property]:Disconnect()
                     nowTime = duration
