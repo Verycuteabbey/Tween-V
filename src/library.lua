@@ -40,6 +40,15 @@ type sourceType =
     | Vector3
 
 local library = {}
+library.default = {
+    style = "Linear",
+    direction = "InOut",
+    duration = 1,
+    extra = {
+        amplitude = 1,
+        period = 0.3
+    }
+}
 
 --#region // style
 local function __linear(schedule: number): number return schedule end
@@ -242,10 +251,12 @@ function library:Lerp(
     schedule: number
 ): sourceType | nil
     --#region // init
-    easeOptions = easeOptions or { style = "Linear", direction = "InOut", extra = { amplitude = 1, period = 0.3 }}
-    easeOptions.style = easeOptions.style or "Linear"
-    easeOptions.direction = easeOptions.direction or "InOut"
-    easeOptions.extra = easeOptions.extra or { amplitude = 1, period = 0.3 }
+    local default = self.default
+
+    easeOptions = easeOptions or default
+    easeOptions.style = easeOptions.style or default.style
+    easeOptions.direction = easeOptions.direction or default.direction
+    easeOptions.extra = easeOptions.extra or default.extra
     --#endregion
     local style, direction, extra = easeOptions.style, easeOptions.direction, easeOptions.extra
     local amplitude, period = extra.amplitude, extra.period

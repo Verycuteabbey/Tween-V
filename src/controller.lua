@@ -35,11 +35,13 @@ function controller:Create(
     schedule: number?
 ): table
     --#region // init
-    easeOptions = easeOptions or { style = "Linear", direction = "InOut", duration = 1, extra = { amplitude = 1, period = 0.3 }}
-    easeOptions.style = easeOptions.style or "Linear"
-    easeOptions.direction = easeOptions.direction or "InOut"
-    easeOptions.duration = easeOptions.duration or 1
-    easeOptions.extra = easeOptions.extra or { amplitude = 1, period = 0.3 }
+    local default = library.default
+
+    easeOptions = easeOptions or default
+    easeOptions.style = easeOptions.style or default.style
+    easeOptions.direction = easeOptions.direction or default.direction
+    easeOptions.duration = easeOptions.duration or default.duration
+    easeOptions.extra = easeOptions.extra or default.extra
 
     schedule = schedule or 0
 
