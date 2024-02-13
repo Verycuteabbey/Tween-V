@@ -32,10 +32,7 @@ function controller:Create(
 
 	local object = {}
 	object.info = {
-        _delay = 0,
-		_loop = 0,
-		current = {},
-		reverse = false,
+		current = {}
 	}
 	object.status = {
 		ended = false,
@@ -44,7 +41,6 @@ function controller:Create(
 		started = false,
 		yielding = false
 	}
-    object.thread = nil
 
 	local info = object.info
 
