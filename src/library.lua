@@ -238,10 +238,7 @@ function library:Lerp(
 	local amplitude, period = extra.amplitude, extra.period
 	local typeA, typeB = typeof(A), typeof(B)
 
-	local variant1 = if typeof(style) == "Enum" then match(tostring(style), "^Enum.EasingStyle%.([^-]+)$") else style
-	local variant2 = if typeof(direction) == "Enum" then match(tostring(direction), "^Enum.EasingDirection%.([^-]+)$") else direction
-
-	local alpha = map[variant2](map[variant1], schedule, amplitude, period)
+	local alpha = map[direction](map[style], schedule, amplitude, period)
 
 	if typeA ~= typeB then return end
 
@@ -260,6 +257,9 @@ function library:EaseOption(
 		extra.amplitude = extra.amplitude or default.extra.amplitude
 		extra.period = extra.period or default.extra.period
 	end
+
+    style = if typeof(style) == "Enum" then match(tostring(style), "^Enum.EasingStyle%.([^-]+)$") else style
+	direction = if typeof(direction) == "Enum" then match(tostring(direction), "^Enum.EasingDirection%.([^-]+)$") else direction
 
 	return {
 		[1] = style or default.style,
