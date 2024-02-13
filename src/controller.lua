@@ -21,7 +21,12 @@ local parent = script.Parent
 local library = require(parent.Library)
 
 --// functions
-function controller:Create(instance: Instance, easeOption: { [number]: Enum | number | string }, target: table, schedule: number?): table
+function controller:Create(
+    instance: Instance,
+    easeOption: { [number]: Enum | number | string | table },
+    target: table,
+    schedule: number?
+): table
 	--#region // init
 	schedule = schedule or 0
 
@@ -87,8 +92,10 @@ function controller:Create(instance: Instance, easeOption: { [number]: Enum | nu
 
 		local function __tween()
 			while true do
+                status = self.status
+
                 if not instance then break end
-                if status.yield then yield() end
+                if status.yielding then yield() end
 
                 if nowTime > duration then
                     if reverse and not status.reversed then
@@ -180,8 +187,10 @@ function controller:Create(instance: Instance, easeOption: { [number]: Enum | nu
 
 		local function __tween()
 			while true do
+                status = self.status
+
                 if not instance then break end
-                if status.yield then yield() end
+                if status.yielding then yield() end
 
                 if nowTime > duration then
                     if reverse and not status.reversed then
