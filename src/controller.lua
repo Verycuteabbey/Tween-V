@@ -11,273 +11,242 @@
 ]]--
 
 --// defines
-local runService = game:GetService("RunService")
-
-local clear = table.clear
-local create = table.create
-local delay = task.delay
+local cancel, delay, spawn, wait = task.cancel, task.delay, task.spawn, task.wait
+local resume, yield = coroutine.resume, coroutine.yield
 
 local controller = {}
 
 --// libraries
-local library = require(script.Parent.Library)
+local parent = script.Parent
+local library = require(parent.Library)
 
 --// functions
-function controller:Create(
-    instance: Instance,
-    easeOptions: {
-        style: string | Enum.EasingStyle?,
-        direction: string | Enum.EasingDirection?,
-        duration: number?,
-        extra: { amplitude: number?, period: number? }?
-    }?,
-    target: table,
-    schedule: number?
-): table
-    --#region // init
-    local default = library.default
+function controller:Create(instance: Instance, easeOption: { [number]: Enum | number | string }, target: table, schedule: number?): table
+	--#region // init
+	schedule = schedule or 0
 
-    easeOptions = easeOptions or default
-    easeOptions.style = easeOptions.style or default.style
-    easeOptions.direction = easeOptions.direction or default.direction
-    easeOptions.duration = easeOptions.duration or default.duration
-    easeOptions.extra = easeOptions.extra or default.extra
+	local object = {}
+	object.info = {
+        _delay = 0,
+		_loop = 0,
+		current = {},
+		reverse = false,
+	}
+	object.status = {
+		ended = false,
+		looped = 0,
+		reversed = false,
+		started = false,
+		yielding = false
+	}
+    object.thread = nil
 
-    schedule = schedule or 0
+	local info = object.info
 
-    local object = {}
-    object.threads = create(#target)
-    object.info = {
-        _delay = nil,
-        _repeat = nil,
-        reverse = nil,
-        properties = {}
-    }
-    object.status = {
-        killed = false,
-        looped = 0,
-        reversed = false,
-        started = false,
-        yielding = false
-    }
-    --#endregion
-    --#region // function - Kill(_delay: number?)
-    function object:Kill(_delay: number?)
-        local status = self.status
-        local started = status.started
+	for K, _ in pairs(target) do info.current[K] = instance[K] end
+	--#endregion
+	--#region // function - Kill(_delay: number?)
+	function object:Kill(_delay: number?)
+		local status = self.status
+		local thread = self.thread
 
-        if not started then return end
+		if not status.started then return end
 
-        delay(_delay, function()
-            status.killed = true
-        end)
-    end
-    --#endregion
-    --#region // function - Replay(_delay: number?, _repeat: number?, reverse: boolean?)
-    function object:Replay(_delay: number?, _repeat: number?, reverse: boolean?)
-        --#region // init
-        local status = self.status
-        local started = status.started
+		delay(_delay, function()
+			cancel(thread)
+		end)
+	end
+	--#endregion
+	--#region // function - Replay(_delay: number?, _repeat: number?, reverse: boolean?)
+	function object:Replay(_delay: number?, _repeat: number?, reverse: boolean?)
+		--#region // init
+		local status = self.status
 
-        if not started then return end
+		if not status.started then return end
 
-        self.status = {
-            killed = false,
+		self.status = {
+            ended = false,
             looped = 0,
             reversed = false,
-            started = true,
+            started = false,
             yielding = false
         }
 
-        local info = self.info
-        local properties = info.properties
-
-        _delay = _delay or info._delay
-        _repeat = _repeat or info._repeat
-        reverse = reverse or info.reverse
-        info._delay = _delay
-        info._repeat = _repeat
-        info.reverse = reverse
-
-        properties.now = properties.backup
-        target.now = target.backup
-        --#endregion
-        --#region // tween
-        local duration = easeOptions.duration
-        local threads = self.threads
+		_delay = _delay or info._delay
+		_repeat = _repeat or info._repeat
+		reverse = reverse or info.reverse
+		info._delay = _delay
+		info._repeat = _repeat
+		info.reverse = reverse
+		--#endregion
+		--#region // tween
+		local current = info.current
+		local duration = easeOption[3]
 
         local nowTime = schedule
 
-        local function __tween(deltaTime: number, property: string)
-            nowTime = nowTime
-            status = self.status
+		local function __tween()
+			while true do
+                if not instance then break end
+                if status.yield then yield() end
 
-            if status.killed or not instance then threads[property]:Disconnect() end
-            if status.yielding then return end
+                if nowTime > duration then
+                    if reverse and not status.reversed then
+                        status.reversed = true
 
-            if nowTime > duration then
-                if reverse and not status.reversed then
-                    status.reversed = true
+                        local temp = current
+                        current = target
+                        target = temp
 
-                    local temp = properties.now
-                    properties.now = target.now
-                    target.now = temp
+                        nowTime = schedule
+                    elseif status.looped < _repeat or _repeat == -1 then
+                        status.looped += 1
 
-                    nowTime = schedule
-                elseif status.looped < _repeat or _repeat == -1 then
-                    status.looped += 1
+                        if status.reversed then
+                            status.reversed = false
 
-                    if status.reversed then
-                        status.reversed = false
+                            local temp = current
+                            current = target
+                            target = temp
+                        end
 
-                        properties.now = properties.backup
-                        target.now = target.backup
+                        nowTime = schedule
+                    else
+                        status.ended = true
+                        nowTime = duration
                     end
-
-                    nowTime = schedule
-                else
-                    threads[property]:Disconnect()
-                    nowTime = duration
                 end
+
+                for K, V in pairs(target) do
+                    local variant = library:Lerp(easeOption, current[K], V, nowTime / duration)
+                    instance[K] = variant
+                end
+
+                if status.ended and status.reversed then
+                    status.reversed = false
+
+                    local temp = current
+                    current = target
+                    target = temp
+
+                    break
+                end
+
+                local deltaTime = wait()
+                nowTime += deltaTime
             end
+		end
+		--#endregion
+		delay(_delay, function()
+			object.thread = spawn(__tween)
+		end)
+	end
+	--#endregion
+	--#region // function - Resume(_delay: number?)
+	function object:Resume(_delay: number?)
+		local status = self.status
+		local thread = self.thread
 
-            local variant =
-                library:Lerp(easeOptions, properties.now[property], target.now[property], nowTime / duration)
+		if not status.started then return end
+		if status.killed then return end
 
-            instance[property] = variant
-            nowTime += deltaTime
-        end
-        --#endregion
-        delay(_delay, function()
-            for K, _ in pairs(target.now) do
-                local function __main(deltaTime: number) __tween(deltaTime, K) end
-                local connection = runService.Heartbeat:Connect(__main)
+		delay(_delay, function()
+			status.yielding = false
 
-                threads[K] = connection
-            end
-        end)
-    end
-    --#endregion
-    --#region // function - Resume(_delay: number?)
-    function object:Resume(_delay: number?)
-        local status = self.status
-        local killed = status.killed
-        local started = status.started
+            resume(thread)
+		end)
+	end
+	--#endregion
+	--#region // function - Start(_delay: number?, _repeat: number?, reverse: boolean?)
+	function object:Start(_delay: number?, _repeat: number?, reverse: boolean?)
+		--#region // init
+		local status = self.status
 
-        if not started then return end
-        if killed then return end
+		if status.started then return end
+		status.started = true
 
-        delay(_delay, function()
-            status.yielding = false
-        end)
-    end
-    --#endregion
-    --#region // function - Start(_delay: number?, _repeat: number?, reverse: boolean?)
-    function object:Start(_delay: number?, _repeat: number?, reverse: boolean?)
-        --#region // init
-        local info = self.info
-        local status = self.status
-        local started = status.started
-
-        if started then return end
-
-        status.started = true
-
-        _delay = _delay or 0
-        _repeat = _repeat or 0
-        reverse = reverse or false
-        info._delay = _delay
-        info._repeat = _repeat
-        info.reverse = reverse
-
-        local newProperties, newTarget = create(#target), create(#target)
-
-        for K, V in pairs(target) do
-            K = tostring(K)
-
-            newProperties[K] = instance[K]
-            newTarget[K] = V
-        end
-
-        clear(target)
-        target.backup = newTarget
-        target.now = newTarget
-
-        info.properties.backup = newProperties
-        info.properties.now = newProperties
-        --#endregion
-        --#region // tween
-        local duration = easeOptions.duration
-        local properties = info.properties
-        local threads = self.threads
+		_delay = _delay or 0
+		_repeat = _repeat or 0
+		reverse = reverse or false
+		info._delay = _delay
+		info._repeat = _repeat
+		info.reverse = reverse
+		--#endregion
+		--#region // tween
+		local current = info.current
+		local duration = easeOption[3]
 
         local nowTime = schedule
 
-        local function __tween(deltaTime: number, property: string)
-            nowTime = nowTime
-            status = self.status
+		local function __tween()
+			while true do
+                if not instance then break end
+                if status.yield then yield() end
 
-            if status.killed or not instance then threads[property]:Disconnect() end
-            if status.yielding then return end
+                if nowTime > duration then
+                    if reverse and not status.reversed then
+                        status.reversed = true
 
-            if nowTime > duration then
-                if reverse and not status.reversed then
-                    status.reversed = true
+                        local temp = current
+                        current = target
+                        target = temp
 
-                    local temp = properties.now
-                    properties.now = target.now
-                    target.now = temp
+                        nowTime = schedule
+                    elseif status.looped < _repeat or _repeat == -1 then
+                        status.looped += 1
 
-                    nowTime = schedule
-                elseif status.looped < _repeat or _repeat == -1 then
-                    status.looped += 1
+                        if status.reversed then
+                            status.reversed = false
 
-                    if status.reversed then
-                        status.reversed = false
+                            local temp = current
+                            current = target
+                            target = temp
+                        end
 
-                        properties.now = properties.backup
-                        target.now = target.backup
+                        nowTime = schedule
+                    else
+                        status.ended = true
+                        nowTime = duration
                     end
-
-                    nowTime = schedule
-                else
-                    threads[property]:Disconnect()
-                    nowTime = duration
                 end
+
+                for K, V in pairs(target) do
+                    local variant = library:Lerp(easeOption, current[K], V, nowTime / duration)
+                    instance[K] = variant
+                end
+
+                if status.ended and status.reversed then
+                    status.reversed = false
+
+                    local temp = current
+                    current = target
+                    target = temp
+
+                    break
+                end
+
+                local deltaTime = wait()
+                nowTime += deltaTime
             end
+		end
+		--#endregion
+		delay(_delay, function()
+			object.thread = spawn(__tween)
+		end)
+	end
+	--#endregion
+	--#region // function - Yield(_delay: number?)
+	function object:Yield(_delay: number?)
+		local status = self.status
 
-            local variant =
-                library:Lerp(easeOptions, properties.now[property], target.now[property], nowTime / duration)
+		if not status.started then return end
 
-            instance[property] = variant
-            nowTime += deltaTime
-        end
-        --#endregion
-        delay(_delay, function()
-            for K, _ in pairs(target.now) do
-                local function __main(deltaTime: number) __tween(deltaTime, K) end
-                local connection = runService.Heartbeat:Connect(__main)
-
-                threads[K] = connection
-            end
-        end)
-    end
-    --#endregion
-    --#region // function - Yield(_delay: number?)
-    function object:Yield(_delay: number?)
-        local status = self.status
-        local killed = status.killed
-        local started = status.started
-
-        if not started then return end
-        if killed then return end
-
-        delay(_delay, function()
-            status.yielding = true
-        end)
-    end
-    --#endregion
-    return object
+		delay(_delay, function()
+			status.yielding = true
+		end)
+	end
+	--#endregion
+	return object
 end
 
 return controller

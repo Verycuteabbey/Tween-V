@@ -30,22 +30,25 @@
 local library = require(path.to.library) -- 记得换成自己存放的路径
 
 library:Lerp(
-    easeOptions: {
-        style: string | Enum.EasingStyle?,
-        direction: string | Enum.EasingDirection?,
-        extra: { amplitude: number?, period: number? }?
-    }?,
+    easeOption: { [number]: Enum | number | string | table },
     A: sourceType,
     B: sourceType, 
     schedule: number
 ): sourceType
+
+library:EaseOption(
+	style: string | Enum.EasingStyle?,
+	direction: string | Enum.EasingDirection?,
+	duration: number?,
+	extra: { amplitude: number?, period: number? }?
+): table
 ```
 
 ---
 
 #### 讲解
 
-`easeOptions` 为缓动类型定义：
+`easeOption` 为缓动类型定义，使用 `EaseOption()` 返回的值
 
 - `style` 为缓动类型
   - 使用自定义类型 `string`: 可选 `Linear`, `Quad`, `Cubic`, `Quart`, `Quint`, `Sine`, `Exponential`, `Circular`, `Elastic`, `Back`, `Bounce`
@@ -55,11 +58,13 @@ library:Lerp(
   - 使用自定义类型 `string`: 可选 `In`, `Out`, `InOut`, `OutIn`
   - 使用兼容性类型 `Enum`: 与 `Enum.EasingDirection` 一致
 
+- `duration` 为整体缓动所需要的时间（仅对 Controller 生效）
+
 - `extra` 为扩展自定义，仅对 `Elastic` 类型生效
   - 当 `amplitude` 越大，弹性幅度越大，反之越小
   - 当 `period` 越大，弹性周期越长，反之越小
 
-所有 `easeOptions` 项都可以选择留空使用 Library 的默认值，包括自身
+所有 `easeOption` 项都可以选择留空使用 Library 的默认值
 
 ---
 
@@ -105,8 +110,9 @@ type sourceType =
 ```lua
 local library = require(path.to.library) -- 记得换成自己存放的路径
 
+local easeOption = library:EaseOption("Quad", "Out")
 local result = library:Lerp(
-    { style = "Quad", direction = "Out" },
+    easeOption,
     Vector3.new(0, 0, 0),
     Vector3.new(10, 10, 10),
     0.5
@@ -118,8 +124,9 @@ print(result)
 以兼容性类型:
 
 ```lua
+local easeOption = library:EaseOption(Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local result = library:Lerp(
-    { style = Enum.EasingStyle.Quad, direction = Enum.EasingDirection.Out },
+    easeOption,
     Vector3.new(0, 0, 0),
     Vector3.new(10, 10, 10),
     0.5
@@ -147,12 +154,7 @@ local tweenV = require(script.library)
 
 tweenV:Create(
     instance: Instance,
-    easeOptions: {
-        style: string | Enum.EasingStyle?,
-        direction: string | Enum.EasingDirection?,
-        duration: number?,
-        extra: { amplitude: number?, period: number? }?
-    }?,
+    easeOption: { [number]: Enum | number | string | table },
     target: table,
     schedule: number?
 ): table
@@ -162,9 +164,9 @@ tweenV:Create(
 
 #### 讲解
 
-`instance` 为你缓动的目标，并非 `instance.Name`
+`instance` 为你缓动的目标
 
-`easeOptions` 与 Library 的一致，只是多了个 `duration`
+`easeOption` 与 Library 的一致，只是多了个 `duration`
 
 `target` 为对象属性最终值，可一个或多个属性同时进行
 
