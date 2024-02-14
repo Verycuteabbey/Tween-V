@@ -13,7 +13,6 @@
 --// defines
 local asin, cos, pi, sin, sqrt = math.asin, math.cos, math.pi, math.sin, math.sqrt
 local fromUnixTimestampMillis = DateTime.fromUnixTimestampMillis
-local match = string.match
 local newColor3 = Color3.new
 local newColorSequenceKeypoint = ColorSequenceKeypoint.new
 local newNumberRange = NumberRange.new
@@ -234,8 +233,8 @@ function library:Lerp(
 	B: sourceType,
 	schedule: number
 ): sourceType | nil
-	local style, direction, extra = easeOption[1], easeOption[2], easeOption[4]
-	local amplitude, period = extra.amplitude, extra.period
+	local style, direction, extra = easeOption[1] :: string, easeOption[2] :: string, easeOption[4] :: table
+	local amplitude, period = extra.amplitude :: number, extra.period :: number
 	local typeA, typeB = typeof(A), typeof(B)
 
 	local alpha = map[direction](map[style], schedule, amplitude, period)
