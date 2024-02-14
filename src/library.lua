@@ -42,6 +42,11 @@ type sourceType =
 	| Vector3
 
 local library = {}
+library.default = {
+	style = "Linear",
+	direction = "InOut",
+	duration = 1
+}
 
 --// functions
 local function __getAlpha(style: Enum.EasingStyle | string, direction: Enum.EasingDirection | string, schedule: number)
@@ -496,32 +501,30 @@ local function __getLerp(variant: string, A: sourceType, B: sourceType, alpha: n
 end
 
 function library:Lerp(
-	easeOptions: { style: Enum.EasingStyle | string?, direction: Enum.EasingDirection | string? }?,
+	easeOption: { style: string | Enum.EasingStyle?, direction: string | Enum.EasingDirection? }?,
 	A: sourceType,
 	B: sourceType,
 	schedule: number
 ): sourceType | nil
-	--#region // default
-	if not easeOptions then
-		easeOptions = {
-			[1] = Enum.EasingStyle.Linear,
-			[2] = Enum.EasingDirection.InOut,
-		}
-	elseif not easeOptions[1] then
-		easeOptions[1] = Enum.EasingStyle.Linear
-	elseif not easeOptions[2] then
-		easeOptions[2] = Enum.EasingDirection.InOut
-	end
-	--#endregion
-	local style, direction = easeOptions[1], easeOptions[2]
-	local alpha = __getAlpha(style, direction, schedule)
+	--#region // init
+	local default = library.default
 
+	easeOption = easeOption or default
+	easeOption.style = easeOption.style or default.style
+	easeOption.direction = easeOption.direction or default.direction
+	--#endregion
+	local style, direction = easeOption.style, easeOption.direction
 	local typeA, typeB = typeof(A), typeof(B)
-	local _type = typeA or typeB
+
+	style, direction =
+		if typeof(style) == "EnumItem" then style.Name else style,
+		if typeof(direction) == "EnumItem" then direction.Name else direction
+
+	local alpha = __getAlpha(style, direction, schedule)
 
 	if typeA ~= typeB then return end
 
-	return __getLerp(_type, A, B, alpha)
+	return __getLerp(typeA or typeB, A, B, alpha)
 end
 
 return library

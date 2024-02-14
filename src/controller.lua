@@ -12,82 +12,52 @@
 --
 
 --// defines
-type positionType =
-	CFrame
-	| Color3
-	| ColorSequenceKeypoint
-	| DateTime
-	| number
-	| NumberRange
-	| NumberSequenceKeypoint
-	| Ray
-	| Rect
-	| Region3
-	| UDim2
-	| Vector2
-	| Vector3
-
-local library = require(script.library)
 local runService = game:GetService("RunService")
+
+--// libraries
+local library = require(script.Library)
 
 local controller = {}
 
 --// functions
 function controller:Create(
 	instance: Instance,
-	easeOptions: {
-		style: Enum.EasingStyle | string?,
-		direction: Enum.EasingDirection | string?,
+	easeOption: {
+		style: string | Enum.EasingStyle?,
+		direction: string | Enum.EasingDirection?,
 		duration: number?
 	}?,
 	target: table
 ): table
-	--#region // default
-	if not easeOptions then
-		easeOptions = {
-			[1] = Enum.EasingStyle.Linear,
-			[2] = Enum.EasingDirection.InOut,
-			[3] = 1
-		}
-	elseif not easeOptions[1] then
-		easeOptions[1] = Enum.EasingStyle.Linear
-	elseif not easeOptions[2] then
-		easeOptions[2] = Enum.EasingDirection.InOut
-	elseif not easeOptions[3] then
-		easeOptions[3] = 1
-	end
-	--#endregion
+	--#region // init
+	local default = library.default :: table
+
+	easeOption = easeOption or default
+	easeOption.style = easeOption.style or default.style
+	easeOption.direction = easeOption.direction or default.direction
+	easeOption.duration = easeOption.duration or default.duration
+
 	local object = {}
-
-	object.threads = {}
-
-	object.info = {
-		instance = instance,
-		easeOptions = easeOptions,
-		properties = {},
-		target = target
-	}
+	object.current = {}
 	object.status = {
 		started = false,
 		yield = false
 	}
+	object.threads = {}
+
+	for K, _ in pairs(target) do object.current[K] = instance[K] end
+	--#endregion
 	--#region // Replay
 	function object:Replay()
 		--#region // check
 		local status = self.status
 
 		if not status.started then return end
-
 		status.yield = false
-
-		self.status = status
 		--#endregion
-		local info = self.info
-		local properties = info.properties
+		local current = self.current
+		local duration = easeOption.duration
 		local threads = self.threads
-
-		easeOptions = info.easeOptions
-		local duration = easeOptions[3]
 
 		local nowTime = 0
 
@@ -102,7 +72,7 @@ function controller:Create(
 				nowTime = duration
 			end
 
-			local variant = library:Lerp(easeOptions, properties[property], target[property], nowTime / duration)
+			local variant = library:Lerp(easeOption, current[property], target[property], nowTime / duration)
 			instance[property] = variant
 
 			nowTime += deltaTime
@@ -122,40 +92,21 @@ function controller:Create(
 	--#region // Resume
 	function object:Resume()
 		local status = self.status
-		local started = status.started
 
-		if not started then return end
-
-		self.status.yield = false
+		if not status.started then return end
+		status.yield = false
 	end
 	--#endregion
 	--#region // Start
 	function object:Start()
 		--#region // check
 		local status = self.status
-		local started = status.started
 
-		if started then return end
-
-		self.status.started = true
+		if status.started then return end
+		status.started = true
 		--#endregion
-		--#region // convert
-		local temp = {}
-
-		for K, V in pairs(target) do
-			K = tostring(K)
-
-			self.info.properties[K] = self.info.instance[K]
-			temp[K] = V
-		end
-
-		target = temp
-		--#endregion
-		local info = self.info
-
-		easeOptions = info.easeOptions
-		local duration = easeOptions[3]
-		local properties = info.properties
+		local current = self.current
+		local duration = easeOption.duration
 
 		local nowTime = 0
 
@@ -171,7 +122,7 @@ function controller:Create(
 			end
 
 			local variant =
-				library:Lerp(easeOptions, properties[property], target[property], nowTime / duration)
+				library:Lerp(easeOption, current[property], target[property], nowTime / duration)
 			instance[property] = variant
 
 			nowTime += deltaTime
@@ -193,10 +144,7 @@ function controller:Create(
 		local status = self.status
 
 		if not status.started then return end
-
 		status.yield = true
-
-		self.status = status
 	end
 	--#endregion
 	return object
