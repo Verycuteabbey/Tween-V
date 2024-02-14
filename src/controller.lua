@@ -171,7 +171,7 @@ function controller:Create(
 			end
 
 			local variant =
-				library:Lerp(easeOptions, properties[property], target[property], nowTime / easeOptions.duration)
+				library:Lerp(easeOptions, properties[property], target[property], nowTime / duration)
 			instance[property] = variant
 
 			nowTime += deltaTime
