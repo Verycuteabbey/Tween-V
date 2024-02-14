@@ -11,10 +11,10 @@
 ]]--
 
 --// defines
-local delay, spawn, wait = task.delay, task.spawn, task.wait
+local cancel, delay, spawn, wait = task.cancel, task.delay, task.spawn, task.wait
+local resume, yield = coroutine.resume, coroutine.yield
 
 local controller = {}
-controller.tween = {}
 
 --// libraries
 local parent = script.Parent
@@ -51,23 +51,26 @@ function controller:Create(
 	--#endregion
 	--#region // function - Kill(_delay: number?)
 	function funcs:Kill(_delay: number?)
-		local status = self.status
+		local status = object.status
+		local thread = object.thread
 
 		if not status.started then return end
 
 		delay(_delay, function()
 			status.ended = true
+
+			cancel(thread)
 		end)
 	end
 	--#endregion
 	--#region // function - Replay(_delay: number?, _repeat: number?, reverse: boolean?)
 	function funcs:Replay(_delay: number?, _repeat: number?, reverse: boolean?)
 		--#region // init
-		local status = self.status
+		local status = object.status
 
 		if not status.started then return end
 
-		self.status = {
+		object.status = {
             ended = false,
             looped = 0,
             reversed = false,
@@ -89,77 +92,82 @@ function controller:Create(
         local nowTime = schedule :: number
 
 		local function __tween()
-			status = self.status
+			while true do
+				status = object.status
 
-            if not instance or status.yielding then return end
+				if not instance then return end
+				if status.yielding then yield() end
 
-            if nowTime > duration then
-                if reverse and not status.reversed then
-                    status.reversed = true
+				if nowTime > duration then
+					if reverse and not status.reversed then
+						status.reversed = true
 
-                    local temp = current
-                    current = target
-                    target = temp
+						local temp = current
+						current = target
+						target = temp
 
-                    nowTime = schedule
-                elseif status.looped < _repeat or _repeat == -1 then
-                    status.looped += 1
+						nowTime = schedule
+					elseif status.looped < _repeat or _repeat == -1 then
+						status.looped += 1
 
-                    if status.reversed then
-                        status.reversed = false
+						if status.reversed then
+							status.reversed = false
 
-                        local temp = current
-                        current = target
-                        target = temp
-                    end
+							local temp = current
+							current = target
+							target = temp
+						end
 
-                    nowTime = schedule
-                else
-                    status.ended = true
-                    nowTime = duration
-                end
-            end
+						nowTime = schedule
+					else
+						status.ended = true
+						nowTime = duration
+					end
+				end
 
-            for K, V in pairs(target) do
-                local variant = library:Lerp(easeOption, current[K], V, nowTime / duration)
-                instance[K] = variant
-            end
+				for K, V in pairs(target) do
+					local variant = library:Lerp(easeOption, current[K], V, nowTime / duration)
+					instance[K] = variant
+				end
 
-            if status.ended and status.reversed then
-                status.reversed = false
+				if status.ended and status.reversed then
+					status.reversed = false
 
-                local temp = current
-                current = target
-                target = temp
+					local temp = current
+					current = target
+					target = temp
 
-                return
-            end
+					return
+				end
 
-            local deltaTime = wait()
-            nowTime += deltaTime
+				local deltaTime = wait()
+				nowTime += deltaTime
+			end
 		end
 		--#endregion
 		delay(_delay, function()
-			self.Update = __tween
+			object.thread = spawn(__tween) :: thread
 		end)
 	end
 	--#endregion
 	--#region // function - Resume(_delay: number?)
 	function funcs:Resume(_delay: number?)
-		local status = self.status
+		local status = object.status
+		local thread = object.thread
 
-		if not status.started then return end
-		if status.killed then return end
+		if not status.started or status.killed then return end
 
 		delay(_delay, function()
 			status.yielding = false
+
+			resume(thread)
 		end)
 	end
 	--#endregion
 	--#region // function - Start(_delay: number?, _repeat: number?, reverse: boolean?)
 	function funcs:Start(_delay: number?, _repeat: number?, reverse: boolean?)
 		--#region // init
-		local status = self.status
+		local status = object.status
 
 		if status.started then return end
 		status.started = true
@@ -178,64 +186,67 @@ function controller:Create(
         local nowTime = schedule :: number
 
 		local function __tween()
-			status = self.status
+			while true do
+				status = object.status
 
-            if not instance or status.yielding then return end
+				if not instance then return end
+				if status.yielding then yield() end
 
-            if nowTime > duration then
-                if reverse and not status.reversed then
-                    status.reversed = true
+				if nowTime > duration then
+					if reverse and not status.reversed then
+						status.reversed = true
 
-                    local temp = current
-                    current = target
-                    target = temp
+						local temp = current
+						current = target
+						target = temp
 
-                    nowTime = schedule
-                elseif status.looped < _repeat or _repeat == -1 then
-                    status.looped += 1
+						nowTime = schedule
+					elseif status.looped < _repeat or _repeat == -1 then
+						status.looped += 1
 
-                    if status.reversed then
-                        status.reversed = false
+						if status.reversed then
+							status.reversed = false
 
-                        local temp = current
-                        current = target
-                        target = temp
-                    end
+							local temp = current
+							current = target
+							target = temp
+						end
 
-                    nowTime = schedule
-                else
-                    status.ended = true
-                    nowTime = duration
-                end
-            end
+						nowTime = schedule
+					else
+						status.ended = true
+						nowTime = duration
+					end
+				end
 
-            for K, V in pairs(target) do
-                local variant = library:Lerp(easeOption, current[K], V, nowTime / duration)
-                instance[K] = variant
-            end
+				for K, V in pairs(target) do
+					local variant = library:Lerp(easeOption, current[K], V, nowTime / duration)
+					instance[K] = variant
+				end
 
-            if status.ended and status.reversed then
-                status.reversed = false
+				if status.ended and status.reversed then
+					status.reversed = false
 
-                local temp = current
-                current = target
-                target = temp
+					local temp = current
+					current = target
+					target = temp
 
-                return
-            end
+					return
+				end
 
-            local deltaTime = wait()
-            nowTime += deltaTime
+				local deltaTime = wait()
+				nowTime += deltaTime
+			end
 		end
 		--#endregion
 		delay(_delay, function()
-			self.Update = __tween
+			object.thread = spawn(__tween) :: thread
 		end)
 	end
 	--#endregion
 	--#region // function - Yield(_delay: number?)
 	function funcs:Yield(_delay: number?)
-		local status = self.status
+		local status = object.status
 
 		if not status.started then return end
 
@@ -245,8 +256,6 @@ function controller:Create(
 	end
 	--#endregion
 	setmetatable(object, funcs)
-	controller.tween[#controller.tween + 1] = object
-
 	return object
 end
 
@@ -258,21 +267,5 @@ function controller:EaseOption(
 ): table
 	return library:EaseOption(style, direction, duration, extra)
 end
-
-spawn(function()
-	while true do
-		for position, tween in pairs(controller.tween) do
-			local status = tween.status
-
-			if status.ended then
-				controller.tween[position] = nil
-			end
-
-			tween:Update()
-		end
-
-		wait()
-	end
-end)
 
 return controller
