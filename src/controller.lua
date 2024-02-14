@@ -82,9 +82,9 @@ function controller:Create(
 		--#endregion
 		--#region // tween
 		local current = info.current
-		local duration = easeOption[3]
+		local duration = easeOption[3] :: number
 
-        local nowTime = schedule
+        local nowTime = schedule :: number
 
 		local function __tween()
 			while true do
@@ -177,9 +177,9 @@ function controller:Create(
 		--#endregion
 		--#region // tween
 		local current = info.current
-		local duration = easeOption[3]
+		local duration = easeOption[3] :: number
 
-        local nowTime = schedule
+        local nowTime = schedule :: number
 
 		local function __tween()
 			while true do
