@@ -258,8 +258,8 @@ function library:EaseOption(
 		extra.period = extra.period or default.extra.period
 	end
 
-    style = if typeof(style) == "Enum" then match(tostring(style), "^Enum.EasingStyle%.([^-]+)$") else style
-	direction = if typeof(direction) == "Enum" then match(tostring(direction), "^Enum.EasingDirection%.([^-]+)$") else direction
+    style = if typeof(style) == "EnumItem" then style.Name else style
+	direction = if typeof(direction) == "EnumItem" then direction.Name else direction
 
 	return {
 		[1] = style or default.style,
