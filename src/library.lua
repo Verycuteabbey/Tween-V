@@ -24,7 +24,6 @@ local newRect = Rect.new
 local newRegion3 = Region3.new
 local newVector2 = Vector2.new
 local newVector3 = Vector3.new
-local match = string.match
 
 type sourceType =
 	CFrame
@@ -320,18 +319,7 @@ local function __getAlpha(style: Enum.EasingStyle | string, direction: Enum.Easi
 		["BounceInOut"] = __bounceInOut
 	}
 
-	local variant: string
-	local _type = typeof(style) or typeof(direction)
-
-	if _type == "Enum" then
-		style, direction = tostring(style), tostring(direction)
-
-		local variant1, variant2 =
-			match(style, "^Enum.EasingStyle%.([^-]+)$"), match(direction, "^Enum.EasingDirection%.([^-]+)$")
-		variant = format("%s%s", variant1, variant2)
-	elseif _type == "string" then
-		variant = format("%s%s", style, direction)
-	end
+	local variant = format("%s%s", style, direction)
 
 	return map[variant](schedule)
 end
