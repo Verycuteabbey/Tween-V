@@ -1,4 +1,4 @@
-# Tween-V // 下一代 VCA's Tween
+# Tween-V-RS // 下一代 VCA's Tween, 但是RS兼容版本
 
 你的下一个 Tween, 何必是 TweenService 呢？
 
@@ -8,154 +8,36 @@
 
 ---
 
-**⚠ 你现在正在浏览 v1 分支，由于各种不足及设计缺陷将要被 v2-alpha 分支版本所替代 ⚠**
-
----
-
 ## 如何食用？
 
-前要提醒：
-
-（待完善类型支持）Tween-V - Library // 是负责返回所提供参数的当前插值进度的支持库，常见类型均可用（详细可见 `sourceType` 定义）
-
-（待逻辑优化）Tween-V - Controller // 是负责处理 Library 所返回的插值进度的控制器，使用 Heartbeat 进行自适应插值
-
----
-
-### 单独使用 Library
-
-如果不打算使用配套 Controller 或者说是写得没你好, 你可以使用以下函数来调用：
+使用下列函数即可创建`Tween`：
 
 ```lua
-local library = require(path.to.library) -- 记得换成自己存放的路径
-
-library:Lerp(
-    easeOptions: { style: Enum.EasingStyle | string?, direction: Enum.EasingDirection | string? }?,
-    A: sourceType,
-    B: sourceType, 
-    schedule: number
-): sourceType
-```
-
----
-
-`easeOptions` 为缓动类型定义，支持 Roblox 所支持的所有类型且向 Roblox 兼容
-
-其中 `sourceType` 是给传入参数的一个定义，可以理解成当前支持插值的类型：
-
-```lua
-type positionType =
-	CFrame
-	| Color3
-	| ColorSequenceKeypoint
-	| DateTime
-	| number
-	| NumberRange
-	| NumberSequenceKeypoint
-	| Ray
-	| Rect
-	| Region3
-	| UDim2
-	| Vector2
-	| Vector3
-```
-
-`A` 为起始点（你跑步的起点），`B` 为结束点（你要到达的终点），`schedule` 为插值进度（0 ~ 1 区间）
-
-但是 `A` 与 `B` 需符合 sourceType 定义，提交无效或尚未支持的类型会被驳回
-
-最终将会返回一个相同类型的插值给你
-
----
-
-使用示例：
-
-获得 Vector3 `(0, 0, 0)` 到 `(10, 10, 10)` 之间 50% 的插值进度，`Quad Out` 作为缓动类型
-
-> ⚠ Library 不允许出现异类型计算，不要想着 CFrame 与 Vector3 两个之间奇奇怪怪的计算！ ⚠
-
-以 `Enum` 为传参类型：
-
-```lua
-local library = require(path.to.library) -- 记得换成自己存放的路径
-
-local result = library:Lerp(
-    { Enum.EasingStyle.Quad, Enum.EasingDirection.Out },
-    Vector3.new(0, 0, 0),
-    Vector3.new(10, 10, 10),
-    0.5
-)
-
-print(result)
-```
-
-以 `string` 为传参类型:
-
-```lua
-local result = library:Lerp(
-    { "Quad", "Out" },
-    Vector3.new(0, 0, 0),
-    Vector3.new(10, 10, 10),
-    0.5
-)
-```
-
-输出 `result` 将会得到 Vector3 `(7.5, 7.5, 7.5)` 返回值
-
----
-
-### 一条龙 Controller
-
-什么？你懒得自己写？
-
-不要慌张，我帮你一条龙服务了，但是先说好不准说我代码水平拉哦？毕竟我都将近一年没有碰过了
-
-而且手头缺少测试工具完全是纯打，别骂了别骂了
-
----
-
-使用下列函数即可创建缓动：
-
-> 控制器默认 Library 路径在其之下，建议存放位置就如刚才所说
-
-```lua
-local tweenV = require(script.library)
+local tweenV = require(path.to.tweenv)
 
 tweenV:Create(
     instance: Instance,
-    easeOption: { style: Enum.EasingStyle | string?, direction: Enum.EasingDirection | string?, duration: number? }?,
-    target: table
-): table
+    tweenInfo: TweenInfo,
+    target: { [string]: any }
+)
+
+--// For exmaple
+tweenV:Create(workspace.Part, TweenInfo.new(), { Size = Vector3.new(4,4,4) })
 ```
+由于是兼容版，所以你会觉得：这不就是`TweenService`？
 
-`instance` 就是你缓动的目标（不是 `Instance.Name`）
-
-`easeOption` 就不需要我介绍了吧？可有可无
-
-`target` 就是你缓动最终的位置（也就是 Library:Lerp() 的参数 `B`），但是与 `TweenService` 类似为一个 table:
+但是，别急，当调用之后会返回一个对象给你，可参考如下： 
 
 ```lua
-target = {
-    Position = Vector3.new(114, 514, 1919),
-    Size = Vector3.new(810, 114, 514),
-    Transparency = 0.5
-}
+local object = tweenV:Create()
+
+object:Start() -- Tween，启动！
+object:Cancel() -- 溜了溜了
+
+--// Recommended
+tweenV:Create(...):Start() --// 这可快多了好吧，链式结构YYDS
 ```
-
-可一个或多个属性同时进行
-
----
-
-当调用之后会返回一个对象给你，可参考如下： 
-
-```lua
-local object = controller:Create(...)
-
-object:Replay() -- one more time!（位置会被重置且会打断当前）
-object:Resume() -- 时间再次流动......（不会重置位置也不会打断，因为本身就是解除冻结）
-object:Start() -- 函数，启动！（指启动 tween）
-object:Yield() -- 冻住，不许走！
-```
+*这更像`TweenService`了好吧*
 
 ---
 
@@ -169,4 +51,4 @@ object:Yield() -- 冻住，不许走！
 
 但说真的，比起各位开发者我其实是个 fw 来的（真），甚至不如一个新手
 
-**MIT License @ 2023 The Mystery Team // Verycuteabbey**
+**MIT License @ 2024 The Mystery Team // Verycuteabbey**
