@@ -30,18 +30,18 @@
 local library = require(path.to.library) -- 记得换成自己存放的路径
 
 library:Lerp(
-    easeOption: { [number]: Enum | number | string | table },
-    A: sourceType,
-    B: sourceType, 
+    easeOption: easeOption,
+    A: source,
+    B: source, 
     schedule: number
-): sourceType
+): source | nil
 
 library:EaseOption(
 	style: string | Enum.EasingStyle?,
 	direction: string | Enum.EasingDirection?,
 	duration: number?,
-	extra: { amplitude: number?, period: number? }?
-): table
+	extra: extra?
+): easeOption
 ```
 
 ---
@@ -64,16 +64,16 @@ library:EaseOption(
   - 当 `amplitude` 越大，弹性幅度越大，反之越小
   - 当 `period` 越大，弹性周期越长，反之越小
 
-所有 `easeOption` 项都可以选择留空使用 Library 的默认值
+`EaseOption()` 中的参数都可以选择性留空使用 Library 的默认值
 
 ---
 
-`sourceType` 为类型定义：
+`source` 为类型定义：
 
 > 可以理解成当前支持插值的类型
 
 ```lua
-type sourceType =
+type source =
     CFrame
     | Color3
     | ColorSequenceKeypoint
@@ -93,7 +93,7 @@ type sourceType =
 
 `A` 为起始点（你跑步的起点），`B` 为结束点（你要到达的终点），`schedule` 为插值进度（0 ~ 1 区间）
 
-但是 `A` 与 `B` 需符合 `sourceType` 定义，提交无效或尚未支持的类型会被驳回
+但是 `A` 与 `B` 需符合 `source` 定义，提交无效或尚未支持的类型会被驳回
 
 最终将会返回一个相同类型的插值给你
 
@@ -110,9 +110,8 @@ type sourceType =
 ```lua
 local library = require(path.to.library) -- 记得换成自己存放的路径
 
-local easeOption = library:EaseOption("Quad", "Out")
 local result = library:Lerp(
-    easeOption,
+    library:EaseOption("Quad", "Out"),
     Vector3.new(0, 0, 0),
     Vector3.new(10, 10, 10),
     0.5
@@ -124,9 +123,8 @@ print(result)
 以兼容性类型:
 
 ```lua
-local easeOption = library:EaseOption(Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local result = library:Lerp(
-    easeOption,
+    library:EaseOption(Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
     Vector3.new(0, 0, 0),
     Vector3.new(10, 10, 10),
     0.5
@@ -154,10 +152,10 @@ local tweenV = require(script.library)
 
 tweenV:Create(
     instance: Instance,
-    easeOption: { [number]: Enum | number | string | table },
-    target: table,
+    easeOption: easeOption,
+    target: target,
     schedule: number?
-): table
+): object
 ```
 
 ---
@@ -189,28 +187,28 @@ target = {
 ```lua
 local object = controller:Create(...)
 
-object:Kill(_delay: number?) -- 你直接给我坐下！
-object:Replay(_delay: number?, _repeat: number?, reverse: boolean?) -- one more time!
-object:Resume(_delay: number?) -- 时间再次流动......
-object:Start(_delay: number?, _repeat: number?, reverse: boolean?) -- 函数，启动！
-object:Yield(_delay: number?) -- 冻住，不许走！
+object:Kill(delay: number?) -- 你直接给我坐下！
+object:Replay(delay: number?, cycles: number?, reverse: boolean?) -- one more time!
+object:Resume(delay: number?) -- 时间再次流动......
+object:Start(delay: number?, cycles: number?, reverse: boolean?) -- 函数，启动！
+object:Yield(delay: number?, duration: number?) -- 冻住，不许走！
 ```
 
 `Start()` 与 `Replay()` 支持延迟播放、循环播放以及往返
 
 - 当 `_delay` > `0` 时, 将会等待相应秒数后再开始
-- 当 `_repeat` > `0` 时, 将会循环播放相应次数，当其为 `0` 时则不循环，当其为 `-1` 时则无限循环
+- 当 `cycles` > `0` 时, 将会循环播放相应次数，当其为 `0` 时则不循环，当其为 `-1` 时则无限循环
 - 当 `reverse` 为 `true` 时，将会在 tween 到达终点后再回去
 
 可留空或填写 `nil` 使用 Controller 默认值，**`Replay()` 的参数支持直接继承 `Start()` 时的内容**
 
 **`Replay()` 皆可强制打断当前所有进行时，使其以提交的参数重新播放**
 
-`Kill()` 直接结束掉当前运行， `_delay` 可定义延迟时间
+`Kill()` 直接结束掉当前运行， `delay` 可定义延迟时间
 
-`Resume()` 重新启动被冻结的 tween, `_delay` 可定义延迟时间
+`Resume()` 重新启动被冻结的 tween, `delay` 可定义延迟时间
 
-`Yield()` 冻结当前 tween 进度， `_delay` 可定义延迟时间
+`Yield()` 冻结当前 tween 进度， `delay` 可定义延迟时间，`duration` 可定义什么时候自动解除
 
 ---
 
