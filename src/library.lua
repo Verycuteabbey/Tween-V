@@ -23,7 +23,9 @@ local newRegion3 = Region3.new
 local newVector2 = Vector2.new
 local newVector3 = Vector3.new
 
-type sourceType =
+export type easeOption = { number | string | table }
+export type extra = { amplitude: number?, period: number? }
+export type source =
 	CFrame
 	| Color3
 	| ColorSequenceKeypoint
@@ -227,17 +229,12 @@ local map = {
 }
 
 --// functions
-function library:Lerp(
-	easeOption: { [number]: Enum | number | string | table },
-	A: sourceType,
-	B: sourceType,
-	schedule: number
-): sourceType | nil
-	local style, direction, extra = easeOption[1] :: string, easeOption[2] :: string, easeOption[4] :: table
+function library:Lerp(easeOption: easeOption, A: source, B: source, schedule: number ): source | nil
+	local style, direction, extra = easeOption[1] :: string, easeOption[2] :: string, easeOption[3] :: table
 	local amplitude, period = extra.amplitude :: number, extra.period :: number
 	local typeA, typeB = typeof(A), typeof(B)
 
-	local alpha = map[direction](map[style], schedule, amplitude, period)
+	local alpha = map[direction](map[style], schedule, amplitude, period) :: number
 
 	if typeA ~= typeB then return end
 
@@ -247,24 +244,22 @@ end
 function library:EaseOption(
 	style: string | Enum.EasingStyle?,
 	direction: string | Enum.EasingDirection?,
-	duration: number?,
-	extra: { amplitude: number?, period: number? }?
-): table
+	extra: extra?
+): easeOption
 	local default = library.default
 
 	if extra then
-		extra.amplitude = extra.amplitude or default.extra.amplitude
-		extra.period = extra.period or default.extra.period
+		extra.amplitude = extra.amplitude :: number or default.extra.amplitude
+		extra.period = extra.period :: number or default.extra.period
 	end
 
-    style = if typeof(style) == "EnumItem" then style.Name else style
-	direction = if typeof(direction) == "EnumItem" then direction.Name else direction
+    style = if typeof(style) == "EnumItem" then style.Name else style :: string
+	direction = if typeof(direction) == "EnumItem" then direction.Name else direction :: string
 
 	return {
-		[1] = style or default.style,
-		[2] = direction or default.direction,
-		[3] = duration or default.duration,
-		[4] = extra or default.extra,
+		[1] = style :: string or default.style,
+		[2] = direction :: string or default.direction,
+		[3] = extra :: extra or default.extra,
 	}
 end
 
