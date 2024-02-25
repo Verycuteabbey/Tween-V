@@ -24,7 +24,7 @@ type tweens = { table }
 local tweens: tweens = {}
 
 --// functions
-function controller:Create(instance: Instance, easeOption: library.easeOption, target: target, schedule: number?): object
+function controller:Create(instance: Instance, easeOption: library.easeOption, target: target, schedule: number?): object | nil
     --#region // init
     schedule = schedule :: number or 0
 
@@ -49,7 +49,7 @@ function controller:Create(instance: Instance, easeOption: library.easeOption, t
     for property, _ in pairs(target) do
         if not instance then return end
 
-        properties.saved = instance[property]
+        properties.saved[property] = instance[property]
     end
     --#endregion
     --#region // functions
@@ -140,11 +140,11 @@ function controller:Create(instance: Instance, easeOption: library.easeOption, t
         if not started or ended then return end
         if not instance then status.ended = true end
 
-        local cycled, reversed, schedule = status.cycled, status.reversed, status.schedule
+        local cycled, reversed, nowSchedule = status.cycled, status.reversed, status.schedule
         local duration = easeOption[3] :: number
         local cycles, reverse, saved = properties.cycles, properties.reverse, properties.saved
 
-        if schedule > duration then
+        if nowSchedule > duration then
             if reverse and not reversed then
                 status.reversed = true
 
@@ -152,7 +152,7 @@ function controller:Create(instance: Instance, easeOption: library.easeOption, t
                 properties.saved = target
                 target = temp
 
-                status.nowTime = schedule
+                status.schedule = schedule
             elseif cycled < cycles or cycles == -1 then
                 status.cycled += 1
 
@@ -164,10 +164,10 @@ function controller:Create(instance: Instance, easeOption: library.easeOption, t
                     target = temp
                 end
 
-                status.nowTime = schedule
+                status.schedule = schedule
             else
                 status.ended = true
-                status.nowTime = duration
+                status.schedule = duration
             end
         end
 
@@ -176,7 +176,7 @@ function controller:Create(instance: Instance, easeOption: library.easeOption, t
             instance[property] = variant
         end
 
-        status.nowTime += deltaTime
+        status.schedule += deltaTime
     end
     --#endregion
     --#region // Yield(delay: number?, duration: number?)
@@ -216,7 +216,7 @@ function controller:Create(instance: Instance, easeOption: library.easeOption, t
     return object
 end
 
-function library:EaseOption(
+function controller:EaseOption(
 	style: string | Enum.EasingStyle?,
 	direction: string | Enum.EasingDirection?,
     duration: number?,
